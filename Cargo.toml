@@ -1,0 +1,5 @@
+[package]
+name = "ttrpg-ose-data"
+version = "0.1.0"
+edition = "2021"
+description = "Bundled OSE rule files for the ttrpg DSL"
