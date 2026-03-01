@@ -8,6 +8,7 @@
 // ============================================================
 
 use "OSE"
+use "OSE Classes"
 
 system "OSE Chargen" {
 
@@ -22,13 +23,8 @@ system "OSE Chargen" {
     // Roll starting HP: 1d(hit_die) + CON modifier, minimum 1.
     // hit_die is 4, 6, or 8 depending on class.
     mechanic roll_starting_hp(hit_die: int, con_mod: int) -> int {
-        let hp_result = match {
-            hit_die == 4 => roll(1d4),
-            hit_die == 6 => roll(1d6),
-            _ => roll(1d8)
-        }
-        let hp = hp_result.total + con_mod
-        if hp < 1 { 1 } else { hp }
+        let hp_result = roll(dice(1, hit_die))
+        max(1, hp_result.total + con_mod)
     }
 
     // Roll starting gold: 3d6 x 10 gp (all OSE classes).
@@ -53,16 +49,14 @@ system "OSE Chargen" {
 
     // Racial ability modifiers. Returns list of 6 ints in ability order:
     // [STR, INT, WIS, DEX, CON, CHA]. Zero means no modifier.
-    derive racial_modifiers(class: Class) -> list<int> {
-        match class {
-            Drow     => [0, 0, 0, 1, -1, 0],
-            Duergar  => [0, 0, 0, 0, 1, -1],
-            Dwarf    => [0, 0, 0, 0, 1, -1],
-            Elf      => [0, 0, 0, 1, -1, 0],
-            Halfling => [-1, 0, 0, 1, 0, 0],
-            HalfOrc  => [1, 0, 0, 0, 1, -2],
-            _        => [0, 0, 0, 0, 0, 0]
-        }
+    table racial_modifiers(class: Class) -> list<int> {
+        Drow     => [0, 0, 0, 1, -1, 0],
+        Duergar  => [0, 0, 0, 0, 1, -1],
+        Dwarf    => [0, 0, 0, 0, 1, -1],
+        Elf      => [0, 0, 0, 1, -1, 0],
+        Halfling => [-1, 0, 0, 1, 0, 0],
+        HalfOrc  => [1, 0, 0, 0, 1, -2],
+        _        => [0, 0, 0, 0, 0, 0]
     }
 
 
@@ -87,8 +81,7 @@ system "OSE Chargen" {
         [non_martial, _]      => 14
     }
 
-    // Wrapper derive for Rust-side DSL evaluation.
-    // evaluate_derive() resolves derives by name; tables require a wrapper.
+    // Compatibility wrapper for callers expecting a derive entry point.
     derive get_character_thac0(aptitude: CombatAptitude, level: int) -> int {
         character_thac0(aptitude, level)
     }
@@ -111,41 +104,37 @@ system "OSE Chargen" {
     derive is_spellbook_caster(class: Class) -> bool {
         let def = class_def(class)
         match def.spell_progression {
-            prog_arcane_full => true,
-            prog_half_elf    => true,
-            prog_drow        => true,
-            _                => false
+            ArcaneFull => true,
+            HalfElf    => true,
+            Drow       => true,
+            _          => false
         }
     }
 
     // Starting spellbook for arcane casters.
     // Always includes Read Magic plus one signature spell.
     // Non-casters and divine casters return an empty list.
-    derive starting_spellbook(class: Class) -> list<string> {
-        match class {
-            MagicUser   => ["Read Magic", "Sleep"],
-            Illusionist => ["Read Magic", "Phantasmal Force"],
-            Elf         => ["Read Magic", "Sleep"],
-            Drow        => ["Read Magic", "Charm Person"],
-            HalfElf     => ["Read Magic", "Shield"],
-            Gnome       => ["Read Magic", "Colour Spray"],
-            Svirfneblin => ["Read Magic", "Chromatic Orb"],
-            _           => []
-        }
+    table starting_spellbook(class: Class) -> list<string> {
+        MagicUser   => ["Read Magic", "Sleep"],
+        Illusionist => ["Read Magic", "Phantasmal Force"],
+        Elf         => ["Read Magic", "Sleep"],
+        Drow        => ["Read Magic", "Charm Person"],
+        HalfElf     => ["Read Magic", "Shield"],
+        Gnome       => ["Read Magic", "Colour Spray"],
+        Svirfneblin => ["Read Magic", "Chromatic Orb"],
+        _           => []
     }
 
     // All level-1 spells available per spell list type.
     // For divine casters: the full selection to prepare from.
     // For arcane casters: the pool they may add to their spellbook.
     // Spell names match data/games/ose/data/spells.json exactly.
-    derive available_starting_spells(spell_list: SpellListType) -> list<string> {
-        match spell_list {
-            list_cleric => ["Cure Light Wounds", "Detect Evil", "Detect Magic", "Light", "Protection from Evil", "Purify Food and Water", "Remove Fear", "Resist Cold"],
-            list_druid => ["Animal Friendship", "Detect Danger", "Entangle", "Faerie Fire", "Invisibility to Animals", "Locate Plant or Animal", "Predict Weather", "Speak with Animals"],
-            list_illusionist => ["Auditory Illusion", "Chromatic Orb", "Colour Spray", "Dancing Lights", "Detect Illusion", "Glamour", "Hypnotism", "Light", "Phantasmal Force", "Read Magic", "Spook", "Wall of Fog"],
-            list_magic_user => ["Charm Person", "Detect Magic", "Floating Disc", "Hold Portal", "Light", "Magic Missile", "Protection from Evil", "Read Languages", "Read Magic", "Shield", "Sleep", "Ventriloquism"],
-            list_drow_arcane_divine => ["Charm Person", "Cure Light Wounds", "Detect Evil", "Detect Magic", "Floating Disc", "Hold Portal", "Light", "Magic Missile", "Protection from Evil", "Read Languages", "Read Magic", "Shield", "Sleep", "Ventriloquism"],
-            no_list => []
-        }
+    table available_starting_spells(spell_list: SpellListType) -> list<string> {
+        Cleric => ["Cure Light Wounds", "Detect Evil", "Detect Magic", "Light", "Protection from Evil", "Purify Food and Water", "Remove Fear", "Resist Cold"],
+        Druid => ["Animal Friendship", "Detect Danger", "Entangle", "Faerie Fire", "Invisibility to Animals", "Locate Plant or Animal", "Predict Weather", "Speak with Animals"],
+        Illusionist => ["Auditory Illusion", "Chromatic Orb", "Colour Spray", "Dancing Lights", "Detect Illusion", "Glamour", "Hypnotism", "Light", "Phantasmal Force", "Read Magic", "Spook", "Wall of Fog"],
+        MagicUser => ["Charm Person", "Detect Magic", "Floating Disc", "Hold Portal", "Light", "Magic Missile", "Protection from Evil", "Read Languages", "Read Magic", "Shield", "Sleep", "Ventriloquism"],
+        DrowArcaneDivine => ["Charm Person", "Cure Light Wounds", "Detect Evil", "Detect Magic", "Floating Disc", "Hold Portal", "Light", "Magic Missile", "Protection from Evil", "Read Languages", "Read Magic", "Shield", "Sleep", "Ventriloquism"],
+        NoList => []
     }
 }

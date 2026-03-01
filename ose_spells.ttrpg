@@ -33,7 +33,7 @@ system "OSE Spells" {
     }
 
     // ========================================================
-    //  SPELL SAVE TYPE DERIVE
+    //  SPELL SAVE TYPE TABLE
     //
     //  Maps each spell to the saving throw category its
     //  target must roll against. Returns no_save for spells
@@ -44,8 +44,7 @@ system "OSE Spells" {
     //  should consult the reversed_description for those.
     // ========================================================
 
-    derive spell_save_type(spell_name: string) -> SpellSaveType {
-        match spell_name {
+    table spell_save_type(spell_name: string) -> SpellSaveType {
 
             // --- Save vs Death (poison/death ray) ---
             "Cloudkill"     => sv_death,
@@ -116,14 +115,13 @@ system "OSE Spells" {
             "Through the Looking Glass" => sv_spells,
             "Triggered Illusion"        => sv_spells,
 
-            // Default: no save required
-            _ => no_save
-        }
+        // Default: no save required
+        _ => no_save
     }
 
 
     // ========================================================
-    //  SPELL DAMAGE DICE DERIVE
+    //  SPELL DAMAGE DICE TABLE
     //
     //  Returns a damage formula string for spells that deal
     //  direct damage. Returns "" for non-damage spells.
@@ -134,8 +132,7 @@ system "OSE Spells" {
     //  Healing spells are included (positive HP change).
     // ========================================================
 
-    derive spell_damage_dice(spell_name: string) -> string {
-        match spell_name {
+    table spell_damage_dice(spell_name: string) -> string {
             // --- Healing ---
             "Cure Light Wounds"     => "1d6+1",
             "Cure Serious Wounds"   => "2d6+2",
@@ -162,7 +159,6 @@ system "OSE Spells" {
             "Death Spell"           => "4d8 HD killed",
             "Cloudkill"             => "instant death under 5 HD",
 
-            _ => ""
-        }
+        _ => ""
     }
 }

@@ -1,21 +1,22 @@
 // ============================================================
 // OSE Combat & Morale — attack resolution, morale, reactions
 //
-// Descending AC system (lower = better). All derives/mechanics
-// take primitive (int) inputs — no cross-file derive calls.
+// Descending AC system (lower = better). Uses ordered enums,
+// entity groups, conditions, events, hooks, and resources for
+// rich type-safe combat modeling.
 //
-// Reference: oag/src/rules/attack.rs (OSE Reference Booklet p19-20)
+// Reference: OSE Reference Booklet (pp. 19-20, 116-124)
 // ============================================================
 
 system "OSE Combat" {
 
-    // --- Enums ---
+    // ───────────────────────── Enums ─────────────────────────
 
     enum AttackOutcome { Miss, Hit }
-
     enum MoraleOutcome { Hold, Fail }
 
-    enum ReactionOutcome {
+    // Ordered: enables comparison (Hostile < Friendly)
+    enum ReactionOutcome ordered {
         Hostile,
         Unfriendly,
         Neutral,
@@ -23,12 +24,122 @@ system "OSE Combat" {
         Friendly
     }
 
+    // Ordered: enables phase comparison and sequencing
+    enum CombatPhase ordered {
+        Declaration,
+        Initiative,
+        Morale,
+        Movement,
+        Missile,
+        Magic,
+        Melee,
+        EndOfRound
+    }
 
-    // --- Tables (static lookup, pattern-matched) ---
+    enum InitiativeWinner { Party, Monsters, Simultaneous }
+    enum PhaseActorSlot { Both, Party, Monsters, Simultaneous, System }
 
-    // Monster HD to THAC0 (8 entries).
-    // Monsters fight as Fighters of equivalent HD level.
-    // HD 0 = normal humans. Wildcard covers HD 19+.
+    // Replaces is_missile/is_melee int flags
+    enum WeaponMode { Melee, Missile }
+
+    // 4-way surprise matrix
+    enum SurpriseState {
+        NoSurprise,
+        PartySurprises,
+        MonstersSurprise,
+        Both
+    }
+
+    // Custom Duration for OSE effects
+    enum Duration {
+        end_of_round,
+        rounds(count: int),
+        indefinite
+    }
+
+
+    // ───────────────────── Structs ─────────────────────
+
+    struct AttackResolution {
+        outcome: AttackOutcome
+        attack_mod: int
+        damage: int
+    }
+
+    struct EncounterStart {
+        party_roll: int
+        monster_roll: int
+        surprise: SurpriseState
+        distance: int
+    }
+
+    // Phase-specific resource tokens for the action economy
+    struct TurnBudget {
+        movement: int = 0
+        attack: int = 0
+        spell: int = 0
+        morale: int = 0
+    }
+
+
+    // ──────────────────── Tags ───────────────────────
+
+    // Semantic tag for entity-level attack resolution mechanics.
+    // Enables selector-targeted modify clauses (e.g. Fleeing).
+    tag attack_resolution
+
+
+    // ─────────────────── Groups ──────────────────────
+
+    group CombatantCore {
+        name: string
+        max_hp: int
+        hp: resource(0..=max_hp)
+        ac: int
+        thac0: int = 19
+    }
+
+    group MeleeCapable {
+        str_mod: int = 0
+        melee_damage_dice: int = 1
+        melee_damage_sides: int = 6
+        melee_weapon_mod: int = 0
+    }
+
+    group MissileCapable {
+        dex_mod: int = 0
+        short_range: int
+        medium_range: int
+        long_range: int
+        missile_damage_dice: int = 1
+        missile_damage_sides: int = 6
+        missile_weapon_mod: int = 0
+    }
+
+    group MonsterStats {
+        hd: int
+        morale_score: int
+    }
+
+    group Spellcasting {
+        has_spells_prepared: bool = false
+    }
+
+
+    // ──────────────────── Entity ──────────────────────
+
+    entity Combatant {
+        include CombatantCore
+        optional MeleeCapable
+        optional MissileCapable
+        optional MonsterStats
+        optional Spellcasting
+    }
+
+
+    // ──────────────────── Tables ──────────────────────
+
+    // Monster HD -> THAC0. HD 0 = normal humans. Wildcard covers HD 19+.
     table monster_thac0(hd: int) -> int {
         0       => 20,
         1..=3   => 19,
@@ -41,7 +152,6 @@ system "OSE Combat" {
     }
 
     // Reaction roll outcome table (2d6 + CHA modifier).
-    // Applied when encountering wandering monsters or NPCs.
     table reaction_outcome(roll: int) -> ReactionOutcome {
         2       => Hostile,
         3..=5   => Unfriendly,
@@ -51,174 +161,260 @@ system "OSE Combat" {
     }
 
 
-    // --- Derives (pure computations, no dice) ---
+    // ─────────────── Derives (pure computation) ───────────────
 
     // Target number: THAC0 minus defender's AC.
-    // Example: THAC0 19 vs AC 5 (chain mail) = need 14 on d20.
-    // Negative AC increases the target number (harder to hit).
+    // Example: THAC0 19 vs AC 5 (chain mail) -> need 14 on d20.
     derive target_number(thac0: int, ac: int) -> int {
         thac0 - ac
     }
 
-    // AC calculation from equipment and DEX.
-    // In descending AC, bonuses subtract (lower = better).
-    // armour_ac: base AC of worn armour (9 = unarmoured).
-    // shield_bonus: 1 if shield equipped, 0 otherwise.
-    // dex_mod: DEX modifier (positive = bonus, negative = penalty).
+    // AC from equipment and DEX. Lower = better in descending AC.
     derive calc_ac(armour_ac: int, shield_bonus: int, dex_mod: int) -> int {
         armour_ac - shield_bonus - dex_mod
     }
 
-    // Missile range modifier.
-    // Short range: +1 to hit. Medium range: no modifier. Long range: -1.
-    // Caller should verify distance <= long_range before calling.
+    // Missile range modifier: short +1, medium 0, long -1.
     derive missile_range_mod(
         distance: int,
         short_range: int,
         medium_range: int,
         long_range: int
     ) -> int {
-        match {
-            distance <= short_range  => 1,
-            distance <= medium_range => 0,
-            _                        => -1
+        if short_range > medium_range || medium_range > long_range {
+            error("invalid range brackets")
+        } else {
+            match {
+                distance < 0             => error("distance must be >= 0"),
+                distance <= short_range  => 1,
+                distance <= medium_range => 0,
+                distance <= long_range   => -1,
+                _                        => error("distance exceeds weapon long range")
+            }
         }
     }
 
-    // --- Round procedure ---
-    // The combat round procedure expressed as a phase machine.
-    // Each phase has an ordered list of actors, determined by initiative winner.
-    //
-    // Actors:
-    //   "both"         — both sides act simultaneously (Declaration, Initiative)
-    //   "party"        — only the party acts (when party won initiative)
-    //   "monsters"     — only monsters act (Morale; or first in Movement–Melee
-    //                    when monsters won initiative)
-    //   "simultaneous" — both sides act in the same step (tied initiative)
-    //   "system"       — engine bookkeeping, no player/monster input (EndOfRound)
-    //
-    // initiative_winner: "party", "monsters", or "simultaneous"
-    //
-    // Returns the ordered slot list for a single phase. For phases that split
-    // by initiative (Movement, Missile, Magic, Melee), the winner's entry
-    // precedes the loser's entry so callers can iterate slots in order.
-    derive phase_actor_order(phase: string, initiative_winner: string) -> list<string> {
-        match {
-            // Simultaneous phases — initiative does not affect order
-            phase == "Declaration"                          => (["both"]),
-            phase == "Initiative"                           => (["both"]),
-            phase == "EndOfRound"                           => (["system"]),
-
-            // Morale — triggered by casualties, monsters only
-            phase == "Morale"                               => (["monsters"]),
-
-            // Initiative-ordered phases (Movement, Missile, Magic, Melee)
-            initiative_winner == "party"                    => (["party", "monsters"]),
-            initiative_winner == "monsters"                 => (["monsters", "party"]),
-            _                                               => (["simultaneous"])
+    // Determine weapon mode from combatant capabilities and distance.
+    // Versatile combatants (both melee and missile) use missile at range.
+    // Disjunctive `with`: combatant must have at least one combat capability.
+    // Neither group's fields are narrowed — `has` guards access each one.
+    derive determine_weapon_mode(
+        combatant: Combatant with MeleeCapable | MissileCapable,
+        distance: int
+    ) -> WeaponMode {
+        if combatant has MissileCapable {
+            if combatant has MeleeCapable {
+                if distance > 10 { WeaponMode.Missile } else { WeaponMode.Melee }
+            } else {
+                WeaponMode.Missile
+            }
+        } else if combatant has MeleeCapable {
+            WeaponMode.Melee
+        } else {
+            error("combatant has no combat capability")
         }
     }
 
-    // --- Phase sequence ---
-    // OSE combat round phases in execution order.
-    // Reference: OSE Reference Booklet p116-124.
-    derive phase_sequence() -> list<string> {
+    // Phase actor order determined by initiative winner.
+    // Winner's slots precede loser's so callers iterate in order.
+    derive phase_actor_order(
+        phase: CombatPhase,
+        initiative_winner: InitiativeWinner
+    ) -> list<PhaseActorSlot> {
+        match phase {
+            CombatPhase.Declaration => [PhaseActorSlot.Both],
+            CombatPhase.Initiative  => [PhaseActorSlot.Both],
+            CombatPhase.Morale      => [PhaseActorSlot.Monsters],
+            CombatPhase.EndOfRound  => [PhaseActorSlot.System],
+            _ => match initiative_winner {
+                InitiativeWinner.Party        => [PhaseActorSlot.Party, PhaseActorSlot.Monsters],
+                InitiativeWinner.Monsters     => [PhaseActorSlot.Monsters, PhaseActorSlot.Party],
+                InitiativeWinner.Simultaneous => [PhaseActorSlot.Simultaneous]
+            }
+        }
+    }
+
+    // Combat round phases in execution order.
+    derive phase_sequence() -> list<CombatPhase> {
         [
-            "Declaration",
-            "Initiative",
-            "Morale",
-            "Movement",
-            "Missile",
-            "Magic",
-            "Melee",
-            "EndOfRound"
+            CombatPhase.Declaration,
+            CombatPhase.Initiative,
+            CombatPhase.Morale,
+            CombatPhase.Movement,
+            CombatPhase.Missile,
+            CombatPhase.Magic,
+            CombatPhase.Melee,
+            CombatPhase.EndOfRound
         ]
     }
 
-    // --- Action budgets ---
-    // Per-phase action budget: how many of each action type a combatant
-    // gets during a given phase. Returns an empty map for phases that
-    // don't consume discrete actions (Declaration, Initiative, EndOfRound).
-    derive action_budget(phase: string) -> map<string, int> {
-        match {
-            phase == "Morale"   => ({"morale": 1}),
-            phase == "Movement" => ({"movement": 1}),
-            phase == "Missile"  => ({"attack": 1}),
-            phase == "Magic"    => ({"spell": 1}),
-            phase == "Melee"    => ({"attack": 1}),
-            _                   => ({"actions": 0})
+    // Per-phase action budget for a combatant.
+    // Takes actor so conditions (e.g. Surprised) can modify per-entity.
+    // Struct defaults on TurnBudget allow omitting zero-valued fields.
+    derive action_budget(actor: Combatant, phase: CombatPhase) -> TurnBudget {
+        match phase {
+            CombatPhase.Morale   => TurnBudget { morale: 1 },
+            CombatPhase.Movement => TurnBudget { movement: 1 },
+            CombatPhase.Missile  => TurnBudget { attack: 1 },
+            CombatPhase.Magic    => TurnBudget { spell: 1 },
+            CombatPhase.Melee    => TurnBudget { attack: 1 },
+            _                    => TurnBudget {}
         }
     }
 
-    // --- Phase-skip conditions ---
-    // Determines whether a phase can be skipped for the current round.
-    // phase: the phase to check
-    // round: current combat round (0 = pre-initiative)
-    // has_spells_declared: 1 if any spells were declared, 0 otherwise
-    // has_living_monsters: 1 if monsters are still alive, 0 otherwise
-    //
-    // Returns 1 if the phase should be skipped, 0 otherwise.
+    // Whether a phase should be skipped this round.
     derive skip_phase(
-        phase: string,
-        round: int,
-        has_spells_declared: int,
-        has_living_monsters: int
-    ) -> int {
-        match {
-            // Skip Magic phase if no spells were declared
-            phase == "Magic" && has_spells_declared == 0 => 1,
-            // Skip Morale if no living monsters (combat about to end)
-            phase == "Morale" && has_living_monsters == 0 => 1,
-            _ => 0
+        phase: CombatPhase,
+        has_spells_declared: bool,
+        has_living_monsters: bool
+    ) -> bool {
+        match phase {
+            CombatPhase.Magic  => !has_spells_declared,
+            CombatPhase.Morale => !has_living_monsters,
+            _                  => false
         }
     }
 
-    // --- Morale trigger derive ---
-    // Determines whether a morale check should be triggered based on
-    // casualties. OSE triggers morale checks when:
-    //   1. First monster death in the encounter
-    //   2. Half or more of the monsters have been killed
-    //
-    // Arguments are ints (booleans encoded as 0/1) because the DSL
-    // doesn't have bool args for derives yet.
-    //
-    // deaths: number of dead monsters
-    // initial: initial monster count
-    // first_death_checked: 1 if first-death morale already checked, 0 otherwise
-    // half_killed_checked: 1 if half-killed morale already checked, 0 otherwise
-    //
-    // Returns 1 if morale should be checked, 0 otherwise.
+    // Whether a morale check should be triggered based on casualties.
+    // OSE triggers when: first monster death, or half or more killed.
     derive should_check_morale(
         deaths: int,
         initial: int,
-        first_death_checked: int,
-        half_killed_checked: int
-    ) -> int {
+        first_death_checked: bool,
+        half_killed_checked: bool
+    ) -> bool {
+        let first_death_trigger = deaths >= 1 && !first_death_checked
+        let half_killed_trigger =
+            initial > 0 &&
+            deaths * 2 >= initial &&
+            !half_killed_checked
+        first_death_trigger || half_killed_trigger
+    }
+
+    // Evasion chance percentage (OSE evasion table).
+    derive evasion_chance(party_size: int, fewer_monsters: bool) -> int {
         match {
-            deaths >= 1 && first_death_checked == 0 => 1,
-            initial > 0 && deaths * 2 >= initial && half_killed_checked == 0 => 1,
-            _ => 0
+            party_size <= 4  && fewer_monsters => 70,
+            party_size <= 4                    => 50,
+            party_size <= 12 && fewer_monsters => 50,
+            party_size <= 12                   => 35,
+            party_size <= 24 && fewer_monsters => 35,
+            party_size <= 24                   => 25,
+            fewer_monsters                     => 25,
+            _                                  => 10
+        }
+    }
+
+    // Initiative model: "group" = 1d6 per side (OSE default).
+    derive initiative_model() -> string {
+        "group"
+    }
+
+
+    // ────────────────── Events ──────────────────────
+
+    event round_start(observer: Combatant) {}
+    event round_end(observer: Combatant) {}
+
+    // Fired by the host when casualties warrant a morale check.
+    event morale_triggered(observer: Combatant) {
+        deaths: int
+        initial_count: int
+    }
+
+
+    // ────────────────── Conditions ──────────────────
+
+    // Applied when morale check fails. Forces all attacks to miss.
+    // Uses selector to target all #attack_resolution mechanics at once.
+    condition Fleeing on bearer: Combatant {
+        modify [#attack_resolution](attacker: bearer) {
+            result.outcome = AttackOutcome.Miss
+            result.damage = 0
+        }
+    }
+
+    // Applied during surprise rounds. Zeroes out action budget.
+    condition Surprised on bearer: Combatant {
+        modify action_budget(actor: bearer) {
+            result.movement = 0
+            result.attack = 0
+            result.spell = 0
+            result.morale = 0
         }
     }
 
 
-    // --- Attack resolution struct ---
+    // ──────────────── Actions ───────────────────
 
-    // Full result of a character attack: hit flag, modifier used, and damage dealt.
-    // Returned by resolve_attack. Caller (Rust) applies HP, logs, and handles
-    // spell disruption side-effects.
-    struct AttackResolution {
-        hit: int
-        attack_mod: int
-        damage: int
+    action Move on actor: Combatant () {
+        cost { movement }
+        resolve {}
+    }
+
+    action MeleeAttack on actor: Combatant with MeleeCapable (target: Combatant) {
+        cost { attack }
+        resolve {
+            let result = resolve_melee_attack(actor, target)
+            match result.outcome {
+                AttackOutcome.Hit => { target.hp -= result.damage },
+                _ => {}
+            }
+        }
+    }
+
+    action MissileAttack on actor: Combatant with MissileCapable (
+        target: Combatant,
+        distance: int
+    ) {
+        cost { attack }
+        resolve {
+            let result = resolve_missile_attack(actor, target, distance)
+            match result.outcome {
+                AttackOutcome.Hit => { target.hp -= result.damage },
+                _ => {}
+            }
+        }
+    }
+
+    action CastSpell on actor: Combatant with Spellcasting () {
+        cost { spell }
+        resolve {}
+    }
+
+    action Regroup on actor: Combatant () {
+        cost { morale }
+        resolve {}
     }
 
 
-    // --- Mechanics (can roll dice, no mutation) ---
+    // ──────────────── Hooks ────────────────────
 
-    // Attack resolution: d20 + modifiers vs target number.
-    // Natural 1 always misses; natural 20 always hits.
-    // attack_mod covers STR (melee), DEX (missile), magic bonuses, etc.
+    // Automatic morale check when triggered by casualties.
+    // The host fires morale_triggered; this hook resolves it.
+    hook MoraleAutoCheck on creature: Combatant with MonsterStats as ms (
+        trigger: morale_triggered(observer: creature)
+    ) {
+        let result = morale_check(creature.ms.morale_score)
+        match result {
+            MoraleOutcome.Fail => {
+                apply_condition(creature, Fleeing, Duration.indefinite)
+            },
+            _ => {}
+        }
+    }
+
+
+    // ──────────────── Prompts ──────────────────
+
+    prompt gm_ruling(context: string) -> string {
+        hint: "The referee makes a ruling based on the situation"
+    }
+
+
+    // ─────────── Mechanics (dice, no mutation) ──────────────
+
+    // d20 attack roll. Natural 1 always misses; natural 20 always hits.
     mechanic attack_roll(
         thac0: int,
         target_ac: int,
@@ -234,276 +430,150 @@ system "OSE Combat" {
         }
     }
 
-    // Damage roll: roll dice notation for damage.
-    // damage_dice: number of dice (e.g. 1 for 1d8)
-    // damage_sides: sides per die (e.g. 8 for 1d8)
-    // damage_mod: flat modifier to add (e.g. +2 for STR bonus)
-    // Minimum damage is always 1.
+    // Damage roll. Minimum damage is always 1.
     mechanic damage_roll(
         damage_dice: int,
         damage_sides: int,
         damage_mod: int = 0
     ) -> int {
         let result = roll(dice(damage_dice, damage_sides))
-        let total = result.total + damage_mod
-        match {
-            total < 1 => 1,
-            _ => total
+        max(1, result.total + damage_mod)
+    }
+
+    // Entity-level melee attack resolution. Conditions can modify this.
+    mechanic resolve_melee_attack(
+        attacker: Combatant with MeleeCapable as melee,
+        target: Combatant,
+        backstab_mult: int = 1
+    ) -> AttackResolution #attack_resolution {
+        if backstab_mult < 1 {
+            error("backstab_mult must be >= 1")
+        } else {
+            let mod = attacker.melee.str_mod
+            let damage_mod = attacker.melee.str_mod + attacker.melee.melee_weapon_mod
+            let outcome = attack_roll(attacker.thac0, target.ac, mod)
+
+            let damage = match outcome {
+                AttackOutcome.Hit => match {
+                    backstab_mult > 1 => {
+                        let raw = roll(dice(attacker.melee.melee_damage_dice, attacker.melee.melee_damage_sides))
+                        max(1, raw.total * backstab_mult + damage_mod)
+                    },
+                    _ => damage_roll(attacker.melee.melee_damage_dice, attacker.melee.melee_damage_sides, damage_mod)
+                },
+                _ => 0
+            }
+
+            AttackResolution { outcome: outcome, attack_mod: mod, damage: damage }
         }
     }
 
-    // Full attack procedure: weapon-type dispatch, modifier selection, hit roll,
-    // and damage roll. Replaces the Rust dispatch logic in resolve_character_attack.
-    //
-    // Parameters:
-    //   thac0, target_ac:  attacker THAC0 and defender AC
-    //   is_missile:        1 if weapon has missile quality, 0 otherwise
-    //   is_melee:          1 if weapon has melee quality, 0 otherwise
-    //     (versatile weapons have both set to 1; distance selects the mode)
-    //   distance:          current combat distance in feet
-    //   str_mod:           STR melee attack+damage modifier (includes rest penalty)
-    //   dex_mod:           DEX missile attack modifier (includes rest penalty)
-    //   short_range / medium_range / long_range: weapon range brackets (0 for melee-only)
-    //   damage_dice / damage_sides: weapon damage expression (e.g. 1, 8 for 1d8)
-    //   weapon_damage_mod: flat modifier from weapon notation (e.g. +1 for "1d8+1")
-    //   backstab_mult:     backstab damage multiplier (1 = normal, 2+ = backstab)
-    //
-    // Returns AttackResolution { hit, attack_mod, damage }.
-    // Caller (Rust) is responsible for HP mutation, logging, and spell disruption.
-    //
-    // Caller must pre-validate that range is legal (distance == 0 and is_missile,
-    // or distance > long_range) before calling — this mechanic does not error on
-    // out-of-range; that is handled by the native fallback path.
-    mechanic resolve_attack(
-        thac0: int,
-        target_ac: int,
-        is_missile: int,
-        is_melee: int,
-        distance: int,
-        str_mod: int,
-        dex_mod: int,
-        short_range: int,
-        medium_range: int,
-        long_range: int,
-        damage_dice: int,
-        damage_sides: int,
-        weapon_damage_mod: int = 0,
-        backstab_mult: int = 1
-    ) -> AttackResolution {
-        // Missile mode: pure missile (is_melee=0), or versatile weapon at > 10'.
-        let use_missile = match {
-            is_missile != 0 && is_melee == 0 => 1,
-            is_missile != 0 && distance > 10  => 1,
-            _                                  => 0
-        }
+    // Entity-level missile attack resolution. Conditions can modify this.
+    mechanic resolve_missile_attack(
+        attacker: Combatant with MissileCapable as missile,
+        target: Combatant,
+        distance: int
+    ) -> AttackResolution #attack_resolution {
+        let range_mod = missile_range_mod(
+            distance, attacker.missile.short_range, attacker.missile.medium_range, attacker.missile.long_range
+        )
+        let mod = attacker.missile.dex_mod + range_mod
+        let outcome = attack_roll(attacker.thac0, target.ac, mod)
 
-        // Attack modifier: DEX + range bracket for missile, STR for melee.
-        let attack_mod = match {
-            use_missile != 0 =>
-                dex_mod + missile_range_mod(distance, short_range, medium_range, long_range),
-            _ => str_mod
-        }
-
-        // Damage flat modifier: STR + weapon bonus for melee, weapon bonus only for missile.
-        let damage_mod = match {
-            use_missile != 0 => weapon_damage_mod,
-            _ => str_mod + weapon_damage_mod
-        }
-
-        // Roll to hit (natural 1/20 rules are inside attack_roll).
-        let outcome = attack_roll(thac0, target_ac, attack_mod)
-
-        // Roll damage on hit.
-        // Backstab multiplies the raw dice roll before adding the flat modifier.
-        // Normal hit uses the standard damage_roll mechanic.
         let damage = match outcome {
-            AttackOutcome.Hit => match {
-                backstab_mult > 1 => {
-                    let raw = roll(dice(damage_dice, damage_sides))
-                    let total = raw.total * backstab_mult + damage_mod
-                    match {
-                        total < 1 => 1,
-                        _         => total
-                    }
-                }
-                _ => damage_roll(damage_dice, damage_sides, damage_mod)
-            }
+            AttackOutcome.Hit => damage_roll(
+                attacker.missile.missile_damage_dice,
+                attacker.missile.missile_damage_sides,
+                attacker.missile.missile_weapon_mod
+            ),
             _ => 0
         }
 
-        AttackResolution {
-            hit: match outcome { AttackOutcome.Hit => 1, _ => 0 },
-            attack_mod: attack_mod,
-            damage: damage
-        }
+        AttackResolution { outcome: outcome, attack_mod: mod, damage: damage }
     }
 
-    // Morale check: 2d6 vs morale score.
-    // If 2d6 > morale score, creatures flee or surrender.
-    // Triggered when: first death on a side, half the group is down.
+    // Morale check: 2d6 vs morale score. Above = fail.
     mechanic morale_check(morale: int) -> MoraleOutcome {
         let result = roll(2d6)
-        if result.total > morale {
-            MoraleOutcome.Fail
-        } else {
-            MoraleOutcome.Hold
-        }
+        if result.total > morale { MoraleOutcome.Fail } else { MoraleOutcome.Hold }
     }
 
-    // --- Initiative model ---
-    // Returns the initiative model used by this game system.
-    // "group" = 1d6 per side (OSE default)
-    // "individual" = 1d6 + DEX modifier per combatant
-    derive initiative_model() -> string {
-        "group"
-    }
-
-    // Group initiative: each side rolls 1d6.
-    // Returns the party's roll. Caller also gets monster roll separately.
+    // Group initiative: 1d6 per side.
     mechanic group_initiative() -> int {
         let result = roll(1d6)
         result.total
     }
 
-    // Individual initiative: 1d6 + DEX initiative modifier.
-    // Each combatant rolls separately. Higher is better.
+    // Individual initiative: 1d6 + DEX modifier.
     mechanic individual_initiative(dex_mod: int = 0) -> int {
         let result = roll(1d6)
         result.total + dex_mod
     }
 
-    // Reaction roll: 2d6 + CHA modifier, consult outcome table.
-    // Result clamped to valid table range (2-12).
-    // Used for initial NPC/monster reactions to the party.
+    // Reaction roll: 2d6 + CHA modifier, clamped to table range.
     mechanic reaction_roll(cha_mod: int = 0) -> ReactionOutcome {
         let result = roll(2d6)
-        let total = result.total + cha_mod
-        let clamped = match {
-            total < 2  => 2,
-            total > 12 => 12,
-            _          => total
-        }
+        let clamped = min(12, max(2, result.total + cha_mod))
         reaction_outcome(clamped)
     }
 
-
-    // --- Encounter mechanics ---
-    // Reference: OSE Reference Booklet — Encounters chapter.
-
-    // 4-way surprise matrix: which side (if any) was surprised.
-    enum SurpriseState {
-        NoSurprise,
-        PartySurprises,
-        MonstersSurprise,
-        Both
-    }
-
-    // Encounter opening result: raw rolls, resolved surprise, and distance.
-    // distance is in feet for dungeon encounters, yards for wilderness.
-    struct EncounterStart {
-        party_roll:   int
-        monster_roll: int
-        surprise:     SurpriseState
-        distance:     int
-    }
-
-    // Surprise roll: each side rolls 1d6. A result of 1-2 means that side is surprised.
-    // Call once per side (party and monsters roll independently).
-    // Returns the raw d6 value; caller compares vs 2 to determine surprise.
+    // Surprise roll: 1d6. Result of 1-2 means surprised.
     mechanic surprise_roll() -> int {
         let result = roll(1d6)
         result.total
     }
 
-    // Dungeon encounter distance in feet.
-    // surprised: 1 if either side is surprised, 0 for a normal encounter.
-    // Normal: 2d6 × 10 feet. Surprised: 1d4 × 10 feet.
-    mechanic dungeon_encounter_distance(surprised: int = 0) -> int {
-        let d = match {
-            surprised != 0 => roll(1d4),
-            _              => roll(2d6)
-        }
+    // Dungeon encounter distance: normal 2d6x10 ft, surprised 1d4x10 ft.
+    mechanic dungeon_encounter_distance(surprised: bool = false) -> int {
+        let d = if surprised { roll(1d4) } else { roll(2d6) }
         d.total * 10
     }
 
-    // Wilderness encounter distance in yards.
-    // surprised: 1 if either side is surprised, 0 for a normal encounter.
-    // Normal: 4d6 × 10 yards. Surprised: 1d4 × 10 yards.
-    mechanic wilderness_encounter_distance(surprised: int = 0) -> int {
-        let d = match {
-            surprised != 0 => roll(1d4),
-            _              => roll(4d6)
-        }
+    // Wilderness encounter distance: normal 4d6x10 yd, surprised 1d4x10 yd.
+    mechanic wilderness_encounter_distance(surprised: bool = false) -> int {
+        let d = if surprised { roll(1d4) } else { roll(4d6) }
         d.total * 10
     }
-
-    // Evasion chance percentage.
-    // party_size: number of characters in the fleeing party.
-    // fewer_monsters: 1 if monster count ≤ party size, 0 otherwise.
-    // Returns the percentage chance (1–100) of successful evasion.
-    // Based on OSE evasion table (party-size brackets × relative numbers).
-    derive evasion_chance(party_size: int, fewer_monsters: int) -> int {
-        match {
-            party_size <= 4  && fewer_monsters == 1 => 70,
-            party_size <= 4                         => 50,
-            party_size <= 12 && fewer_monsters == 1 => 50,
-            party_size <= 12                        => 35,
-            party_size <= 24 && fewer_monsters == 1 => 35,
-            party_size <= 24                        => 25,
-            fewer_monsters == 1                     => 25,
-            _                                       => 10
-        }
-    }
-
-    // --- Encounter procedure mechanics ---
-    // These express the full opening sequence for an encounter: roll surprise
-    // for both sides, interpret the 4-way surprise matrix, determine distance.
-    // Game systems can override these mechanics to implement different encounter
-    // flows (e.g. no surprise in certain terrain, different distance tables).
 
     // Dungeon encounter opening sequence.
-    // Returns party/monster rolls, the resolved surprise state, and distance in feet.
     mechanic dungeon_encounter_sequence() -> EncounterStart {
-        let party_roll    = surprise_roll()
-        let monster_roll  = surprise_roll()
-        let party_surp    = party_roll <= 2
-        let monster_surp  = monster_roll <= 2
-        let surprised_flag = if party_surp || monster_surp { 1 } else { 0 }
+        let party_roll = surprise_roll()
+        let monster_roll = surprise_roll()
+        let party_surprised = party_roll <= 2
+        let monster_surprised = monster_roll <= 2
         let surprise = match {
-            party_surp && monster_surp => SurpriseState.Both,
-            party_surp                 => SurpriseState.MonstersSurprise,
-            monster_surp               => SurpriseState.PartySurprises,
-            _                          => SurpriseState.NoSurprise
+            party_surprised && monster_surprised => SurpriseState.Both,
+            party_surprised                      => SurpriseState.MonstersSurprise,
+            monster_surprised                    => SurpriseState.PartySurprises,
+            _                                    => SurpriseState.NoSurprise
         }
-        let distance = dungeon_encounter_distance(surprised_flag)
+        let distance = dungeon_encounter_distance(party_surprised || monster_surprised)
         EncounterStart {
-            party_roll:   party_roll,
+            party_roll: party_roll,
             monster_roll: monster_roll,
-            surprise:     surprise,
-            distance:     distance
+            surprise: surprise,
+            distance: distance
         }
     }
 
     // Wilderness encounter opening sequence.
-    // Returns party/monster rolls, the resolved surprise state, and distance in yards.
     mechanic wilderness_encounter_sequence() -> EncounterStart {
-        let party_roll    = surprise_roll()
-        let monster_roll  = surprise_roll()
-        let party_surp    = party_roll <= 2
-        let monster_surp  = monster_roll <= 2
-        let surprised_flag = if party_surp || monster_surp { 1 } else { 0 }
+        let party_roll = surprise_roll()
+        let monster_roll = surprise_roll()
+        let party_surprised = party_roll <= 2
+        let monster_surprised = monster_roll <= 2
         let surprise = match {
-            party_surp && monster_surp => SurpriseState.Both,
-            party_surp                 => SurpriseState.MonstersSurprise,
-            monster_surp               => SurpriseState.PartySurprises,
-            _                          => SurpriseState.NoSurprise
+            party_surprised && monster_surprised => SurpriseState.Both,
+            party_surprised                      => SurpriseState.MonstersSurprise,
+            monster_surprised                    => SurpriseState.PartySurprises,
+            _                                    => SurpriseState.NoSurprise
         }
-        let distance = wilderness_encounter_distance(surprised_flag)
+        let distance = wilderness_encounter_distance(party_surprised || monster_surprised)
         EncounterStart {
-            party_roll:   party_roll,
+            party_roll: party_roll,
             monster_roll: monster_roll,
-            surprise:     surprise,
-            distance:     distance
+            surprise: surprise,
+            distance: distance
         }
     }
 }

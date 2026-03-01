@@ -10,6 +10,7 @@
 // ============================================================
 
 use "OSE"
+use "OSE Classes"
 
 system "OSE Equipment" {
 
@@ -57,8 +58,7 @@ system "OSE Equipment" {
     //  Per OSE Reference Booklet and Players Tomes.
     // ========================================================
 
-    derive equipment_package(class: Class) -> list<string> {
-        match class {
+    table equipment_package(class: Class) -> list<string> {
 
             // --- Martial (heavy armour + melee) ---
 
@@ -113,7 +113,6 @@ system "OSE Equipment" {
             Gnome => ["Dagger", "Sling", "Sling stones", "Leather", "Backpack", "Torches (6)", "Tinder box (flint &steel)", "Rations (iron, 7 days)", "Waterskin"],
 
             Svirfneblin => ["Short sword", "Dagger", "Leather", "Backpack", "Torches (6)", "Tinder box (flint &steel)", "Rations (iron, 7 days)", "Waterskin", "Iron spikes (12)"]
-        }
     }
 
 
@@ -225,7 +224,7 @@ system "OSE Equipment" {
         [Svirfneblin, 5..=6] => "Crossbow"
     }
 
-    // Wrapper derive for Rust-side DSL evaluation.
+    // Compatibility wrapper for callers expecting a derive entry point.
     derive get_random_starting_weapon(class: Class, roll: int) -> string {
         random_starting_weapon(class, roll)
     }

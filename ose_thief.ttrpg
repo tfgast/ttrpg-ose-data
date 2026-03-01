@@ -134,7 +134,7 @@ system "OSE" {
     }
 
     // --- Thief skill check (d100 roll-under) ---
-    // For all skills except hear_noise — use hear_noise() for that.
+    // For all skills except hear_noise — use hear_noise_check() for that.
 
     mechanic thief_skill_check(skill: ThiefSkill, level: int) -> bool {
         let chance = skill_chance(skill, level)
@@ -145,7 +145,7 @@ system "OSE" {
     // --- Hear noise (d6 roll-under variant) ---
     // Hear noise uses 1d6 instead of d100. Succeed if roll <= target.
 
-    mechanic hear_noise(level: int) -> bool {
+    mechanic hear_noise_check(level: int) -> bool {
         let target = skill_chance(hear_noise, level)
         let result = roll(1d6)
         result.total <= target

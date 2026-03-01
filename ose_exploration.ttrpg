@@ -41,6 +41,32 @@ system "OSE Exploration" {
         exp_pick       // Pick lock on a locked door
     }
 
+    enum ExplorationPhase {
+        CheckLight,
+        AdvanceTime,
+        CheckRest,
+        ExecuteAction,
+        LightSummary,
+        WanderingMonsterCheck
+    }
+
+    enum ExplorationActionPhase {
+        MarkExplored,
+        RollSearch,
+        ReportFindings,
+        TreasureCheck,
+        ValidateDoors,
+        RollListen,
+        ValidateDoor,
+        TransitionRoom,
+        CheckTrap,
+        SpawnMonsters,
+        RollForce,
+        ValidateLock,
+        ValidateThiefSkill,
+        RollPick
+    }
+
 
     // ========================================================
     //  EXPLORATION TURN PHASE SEQUENCE
@@ -54,14 +80,14 @@ system "OSE Exploration" {
     //  phases (e.g., wilderness tracking, exhaustion mechanics).
     // ========================================================
 
-    derive exploration_turn_phases() -> list<string> {
+    derive exploration_turn_phases() -> list<ExplorationPhase> {
         [
-            "CheckLight",
-            "AdvanceTime",
-            "CheckRest",
-            "ExecuteAction",
-            "LightSummary",
-            "WanderingMonsterCheck"
+            ExplorationPhase.CheckLight,
+            ExplorationPhase.AdvanceTime,
+            ExplorationPhase.CheckRest,
+            ExplorationPhase.ExecuteAction,
+            ExplorationPhase.LightSummary,
+            ExplorationPhase.WanderingMonsterCheck
         ]
     }
 
@@ -73,40 +99,38 @@ system "OSE Exploration" {
     //  Each action has its own sequence; an empty list means the
     //  action adds no specific steps beyond the outer wrapper.
     //
-    //  Sub-phases are informational labels for the orchestrator.
-    //  Rust executes the corresponding mechanic for each label.
+    //  Sub-phases are closed enum labels for the orchestrator.
+    //  Rust can map enum variants to corresponding mechanics.
     // ========================================================
 
-    derive exploration_action_phases(action: ExplorationAction) -> list<string> {
-        match action {
-            exp_advance => [
-                "MarkExplored"
-            ],
-            exp_search => [
-                "RollSearch",
-                "ReportFindings",
-                "TreasureCheck"
-            ],
-            exp_listen => [
-                "ValidateDoors",
-                "RollListen"
-            ],
-            exp_move => [
-                "ValidateDoor",
-                "TransitionRoom",
-                "CheckTrap",
-                "SpawnMonsters"
-            ],
-            exp_force => [
-                "ValidateDoor",
-                "RollForce"
-            ],
-            exp_pick => [
-                "ValidateLock",
-                "ValidateThiefSkill",
-                "RollPick"
-            ]
-        }
+    table exploration_action_phases(action: ExplorationAction) -> list<ExplorationActionPhase> {
+        exp_advance => [
+            ExplorationActionPhase.MarkExplored
+        ],
+        exp_search => [
+            ExplorationActionPhase.RollSearch,
+            ExplorationActionPhase.ReportFindings,
+            ExplorationActionPhase.TreasureCheck
+        ],
+        exp_listen => [
+            ExplorationActionPhase.ValidateDoors,
+            ExplorationActionPhase.RollListen
+        ],
+        exp_move => [
+            ExplorationActionPhase.ValidateDoor,
+            ExplorationActionPhase.TransitionRoom,
+            ExplorationActionPhase.CheckTrap,
+            ExplorationActionPhase.SpawnMonsters
+        ],
+        exp_force => [
+            ExplorationActionPhase.ValidateDoor,
+            ExplorationActionPhase.RollForce
+        ],
+        exp_pick => [
+            ExplorationActionPhase.ValidateLock,
+            ExplorationActionPhase.ValidateThiefSkill,
+            ExplorationActionPhase.RollPick
+        ]
     }
 
 
@@ -122,20 +146,20 @@ system "OSE Exploration" {
     // ========================================================
 
     derive skip_exploration_phase(
-        phase: string,
+        phase: ExplorationPhase,
         has_light: bool,
         needs_rest: bool
     ) -> bool {
         match {
             // CheckLight always runs — it is the gate, not gated itself
-            phase == "CheckLight" => false,
+            phase == ExplorationPhase.CheckLight => false,
 
             // All subsequent phases are blocked when party is in darkness.
             // Rust returns an error or "DARKNESS" message to the GM.
             !has_light => true,
 
             // Rest warning is skipped when the party does not need rest.
-            phase == "CheckRest" && !needs_rest => true,
+            phase == ExplorationPhase.CheckRest && !needs_rest => true,
 
             _ => false
         }

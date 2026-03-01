@@ -173,7 +173,8 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     derive starvation_penalty(days_without_food: int) -> int {
-        if days_without_food > 4 { -4 } else { -days_without_food }
+        let days = max(0, days_without_food)
+        -min(days, 4)
     }
 
 

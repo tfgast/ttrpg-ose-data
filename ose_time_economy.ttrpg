@@ -28,11 +28,9 @@ system "OSE Time Economy" {
 
     // Duration in dungeon turns for each light source.
     // Torch: 6 turns (1 hour). Lantern: 24 turns (4 hours).
-    derive light_source_turns(kind: LightSourceKind) -> int {
-        match kind {
-            torch   => 6,
-            lantern => 24
-        }
+    table light_source_turns(kind: LightSourceKind) -> int {
+        torch   => 6,
+        lantern => 24
     }
 
 
@@ -77,15 +75,13 @@ system "OSE Time Economy" {
     //   pp = 5.00 gp  → 500
     // --------------------------------------------------------
 
-    derive coin_gp_value_x100(coin: string) -> int {
-        match {
-            coin == "cp" => 1,
-            coin == "sp" => 10,
-            coin == "ep" => 50,
-            coin == "gp" => 100,
-            coin == "pp" => 500,
-            _            => 0
-        }
+    table coin_gp_value_x100(coin: string) -> int {
+        "cp" => 1,
+        "sp" => 10,
+        "ep" => 50,
+        "gp" => 100,
+        "pp" => 500,
+        _    => 0
     }
 
 
@@ -122,12 +118,10 @@ system "OSE Time Economy" {
     //   Chain mail:   400 cn (40 lb)
     //   Leather:      200 cn (20 lb)
     //   Shield:       100 cn (10 lb)
-    derive armour_weight_cn(armour: ArmourKind) -> int {
-        match armour {
-            plate   => 500,
-            chain   => 400,
-            leather => 200,
-            shield  => 100
-        }
+    table armour_weight_cn(armour: ArmourKind) -> int {
+        plate   => 500,
+        chain   => 400,
+        leather => 200,
+        shield  => 100
     }
 }

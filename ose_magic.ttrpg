@@ -153,14 +153,13 @@ system "OSE Magic" {
     // Check if a class has any spell slots at a given level.
     derive can_cast(progression: SpellProgression, level: int) -> bool {
         let slots = spell_slots(progression, level)
-        slots[0] > 0 || slots[1] > 0 || slots[2] > 0 ||
-        slots[3] > 0 || slots[4] > 0 || slots[5] > 0
+        any([slot > 0 for slot in slots])
     }
 
     // Total number of spell slots across all spell levels.
     derive total_spell_slots(progression: SpellProgression, level: int) -> int {
         let slots = spell_slots(progression, level)
-        slots[0] + slots[1] + slots[2] + slots[3] + slots[4] + slots[5]
+        sum(slots)
     }
 
 
@@ -193,17 +192,8 @@ system "OSE Magic" {
             spell_points => slots_used[0] + spell_point_cost(spell_level) <= max_slots[0],
             spontaneous_slots => {
                 // Check if any slot at spell_level or higher is available
-                let idx = spell_level - 1
-                let found = match {
-                    idx <= 0 && max_slots[0] > slots_used[0] => true,
-                    idx <= 1 && max_slots[1] > slots_used[1] => true,
-                    idx <= 2 && max_slots[2] > slots_used[2] => true,
-                    idx <= 3 && max_slots[3] > slots_used[3] => true,
-                    idx <= 4 && max_slots[4] > slots_used[4] => true,
-                    idx <= 5 && max_slots[5] > slots_used[5] => true,
-                    _ => false
-                }
-                found
+                let start = max(0, spell_level - 1)
+                any([max_slots[i] > slots_used[i] for i in start..6])
             }
         }
     }

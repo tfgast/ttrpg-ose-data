@@ -57,7 +57,7 @@ system "OSE Saves" {
         [Drow, 1..=3]  => SavingThrows { death: 12, wands: 13, paralysis: 13, breath: 15, spells: 12 },
         [Drow, 4..=6]  => SavingThrows { death: 10, wands: 11, paralysis: 11, breath: 13, spells: 10 },
         [Drow, 7..=9]  => SavingThrows { death:  8, wands:  9, paralysis:  9, breath: 10, spells:  8 },
-        [Drow, 10..=10] => SavingThrows { death:  6, wands:  7, paralysis:  8, breath:  8, spells:  6 },
+        [Drow, 10] => SavingThrows { death:  6, wands:  7, paralysis:  8, breath:  8, spells:  6 },
 
         // --- Dwarf (also: Duergar) ---
         // Max level 12. 4 tiers.
@@ -71,7 +71,7 @@ system "OSE Saves" {
         [Elf, 1..=3]   => SavingThrows { death: 12, wands: 13, paralysis: 13, breath: 15, spells: 15 },
         [Elf, 4..=6]   => SavingThrows { death: 10, wands: 11, paralysis: 11, breath: 13, spells: 12 },
         [Elf, 7..=9]   => SavingThrows { death:  8, wands:  9, paralysis:  9, breath: 10, spells: 10 },
-        [Elf, 10..=10] => SavingThrows { death:  6, wands:  7, paralysis:  8, breath:  8, spells:  8 },
+        [Elf, 10] => SavingThrows { death:  6, wands:  7, paralysis:  8, breath:  8, spells:  8 },
 
         // --- Fighter (also: Knight, Ranger) ---
         // Max level 14. 5 tiers.
@@ -139,7 +139,7 @@ system "OSE Saves" {
         bonus: int = 0
     ) -> bool {
         let result = roll(1d20)
-        result >= target_number - bonus
+        result.total >= target_number - bonus
     }
 
 
