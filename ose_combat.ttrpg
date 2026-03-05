@@ -94,7 +94,7 @@ system "OSE Combat" {
     group CombatantCore {
         name: string
         max_hp: int
-        hp: resource(0..=max_hp)
+        restricted hp: resource(0..=max_hp)
         ac: int
         thac0: int = 19
     }
