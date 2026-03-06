@@ -1,0 +1,42 @@
+// OSE time, light, rest, and economy integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_time_economy_integration.rs
+// Tests time/economy constants and table lookups.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── Light source durations ──────────────────────────────────────
+
+assert_eq light_source_turns(Torch), 6
+assert_eq light_source_turns(Lantern), 24
+
+// ── Rest and day-length constants ───────────────────────────────
+
+assert_eq rest_interval_turns(), 5
+assert_eq rest_overdue_penalty(), -1
+assert_eq day_length_turns(), 144
+
+// ── Coin values (gp x100) ───────────────────────────────────────
+
+assert_eq coin_gp_value_x100("cp"), 1
+assert_eq coin_gp_value_x100("sp"), 10
+assert_eq coin_gp_value_x100("ep"), 50
+assert_eq coin_gp_value_x100("gp"), 100
+assert_eq coin_gp_value_x100("pp"), 500
+assert_eq coin_gp_value_x100("unknown"), 0
+
+// ── Training cost progression ───────────────────────────────────
+
+assert_eq training_cost_gp(1), 100
+assert_eq training_cost_gp(3), 300
+assert_eq training_cost_gp(14), 1400
+
+// ── Armour weights ──────────────────────────────────────────────
+
+assert_eq armour_weight_cn(Plate), 500
+assert_eq armour_weight_cn(Chain), 400
+assert_eq armour_weight_cn(Leather), 200
+assert_eq armour_weight_cn(Shield), 100
