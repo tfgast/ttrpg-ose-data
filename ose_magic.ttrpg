@@ -175,12 +175,12 @@ system "OSE Magic" {
     // ========================================================
 
     // Casting resource types.
-    enum CastingResource { vancian_slots, spell_points, spontaneous_slots }
+    enum CastingResource { VancianSlots, SpellPoints, SpontaneousSlots }
 
     // Returns the casting resource type for this game system.
     derive casting_resource_type(progression: SpellProgression) -> CastingResource {
         match progression {
-            _ => vancian_slots
+            _ => VancianSlots
         }
     }
 
@@ -188,9 +188,9 @@ system "OSE Magic" {
     // considering their current slot usage vs maximum slots.
     derive can_cast_spell(resource_type: CastingResource, slots_used: list<int>, max_slots: list<int>, spell_level: int) -> bool {
         match resource_type {
-            vancian_slots => slots_used[spell_level - 1] < max_slots[spell_level - 1],
-            spell_points => slots_used[0] + spell_point_cost(spell_level) <= max_slots[0],
-            spontaneous_slots => {
+            VancianSlots => slots_used[spell_level - 1] < max_slots[spell_level - 1],
+            SpellPoints => slots_used[0] + spell_point_cost(spell_level) <= max_slots[0],
+            SpontaneousSlots => {
                 // Check if any slot at spell_level or higher is available
                 let start = max(0, spell_level - 1)
                 any([max_slots[i] > slots_used[i] for i in start..6])
@@ -201,9 +201,9 @@ system "OSE Magic" {
     // Returns the cost in resources to cast a spell of the given level.
     derive cast_cost(resource_type: CastingResource, spell_level: int) -> int {
         match resource_type {
-            vancian_slots => 1,
-            spell_points => spell_point_cost(spell_level),
-            spontaneous_slots => 1
+            VancianSlots => 1,
+            SpellPoints => spell_point_cost(spell_level),
+            SpontaneousSlots => 1
         }
     }
 

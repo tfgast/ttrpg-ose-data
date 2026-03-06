@@ -22,15 +22,15 @@ system "OSE Time Economy" {
     // Light source types for duration tracking.
     // Variant names are globally unique per DSL requirements.
     enum LightSourceKind {
-        torch,
-        lantern
+        Torch,
+        Lantern
     }
 
     // Duration in dungeon turns for each light source.
     // Torch: 6 turns (1 hour). Lantern: 24 turns (4 hours).
     table light_source_turns(kind: LightSourceKind) -> int {
-        torch   => 6,
-        lantern => 24
+        Torch   => 6,
+        Lantern => 24
     }
 
 
@@ -107,10 +107,10 @@ system "OSE Time Economy" {
     // Armour categories for weight lookup.
     // Using distinct variant names to avoid global collisions.
     enum ArmourKind {
-        plate,
-        chain,
-        leather,
-        shield
+        Plate,
+        Chain,
+        Leather,
+        Shield
     }
 
     // Weight in coins (cn) for basic encumbrance.
@@ -119,9 +119,9 @@ system "OSE Time Economy" {
     //   Leather:      200 cn (20 lb)
     //   Shield:       100 cn (10 lb)
     table armour_weight_cn(armour: ArmourKind) -> int {
-        plate   => 500,
-        chain   => 400,
-        leather => 200,
-        shield  => 100
+        Plate   => 500,
+        Chain   => 400,
+        Leather => 200,
+        Shield  => 100
     }
 }

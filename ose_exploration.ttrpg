@@ -33,12 +33,12 @@ system "OSE Exploration" {
     // ========================================================
 
     enum ExplorationAction {
-        exp_advance,   // Generic turn advance (AdvanceDungeonTurn command)
-        exp_search,    // Search current room for hidden features
-        exp_listen,    // Listen at door for sounds beyond
-        exp_move,      // Move party through a door to adjacent room
-        exp_force,     // Force open a stuck/closed door (no turn cost — but triggers checks)
-        exp_pick       // Pick lock on a locked door
+        ExpAdvance,   // Generic turn advance (AdvanceDungeonTurn command)
+        ExpSearch,    // Search current room for hidden features
+        ExpListen,    // Listen at door for sounds beyond
+        ExpMove,      // Move party through a door to adjacent room
+        ExpForce,     // Force open a stuck/closed door (no turn cost — but triggers checks)
+        ExpPick       // Pick lock on a locked door
     }
 
     enum ExplorationPhase {
@@ -104,29 +104,29 @@ system "OSE Exploration" {
     // ========================================================
 
     table exploration_action_phases(action: ExplorationAction) -> list<ExplorationActionPhase> {
-        exp_advance => [
+        ExpAdvance => [
             ExplorationActionPhase.MarkExplored
         ],
-        exp_search => [
+        ExpSearch => [
             ExplorationActionPhase.RollSearch,
             ExplorationActionPhase.ReportFindings,
             ExplorationActionPhase.TreasureCheck
         ],
-        exp_listen => [
+        ExpListen => [
             ExplorationActionPhase.ValidateDoors,
             ExplorationActionPhase.RollListen
         ],
-        exp_move => [
+        ExpMove => [
             ExplorationActionPhase.ValidateDoor,
             ExplorationActionPhase.TransitionRoom,
             ExplorationActionPhase.CheckTrap,
             ExplorationActionPhase.SpawnMonsters
         ],
-        exp_force => [
+        ExpForce => [
             ExplorationActionPhase.ValidateDoor,
             ExplorationActionPhase.RollForce
         ],
-        exp_pick => [
+        ExpPick => [
             ExplorationActionPhase.ValidateLock,
             ExplorationActionPhase.ValidateThiefSkill,
             ExplorationActionPhase.RollPick

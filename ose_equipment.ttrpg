@@ -39,11 +39,11 @@ system "OSE Equipment" {
     derive default_starting_armour(class: Class) -> list<string> {
         let def = class_def(class)
         match def.armour {
-            any_armour     => ["Chainmail", "Shield"],
-            any_no_shield  => ["Chainmail"],
-            leather_shield => ["Leather", "Shield"],
-            leather_only   => ["Leather"],
-            no_armour      => []
+            AnyArmour     => ["Chainmail", "Shield"],
+            AnyNoShield  => ["Chainmail"],
+            LeatherShield => ["Leather", "Shield"],
+            LeatherOnly   => ["Leather"],
+            NoArmour      => []
         }
     }
 

@@ -52,9 +52,9 @@ system "OSE Combat" {
 
     // Custom Duration for OSE effects
     enum Duration {
-        end_of_round,
-        rounds(count: int),
-        indefinite
+        EndOfRound,
+        Rounds(count: int),
+        Indefinite
     }
 
 
@@ -398,7 +398,7 @@ system "OSE Combat" {
         let result = morale_check(creature.ms.morale_score)
         match result {
             MoraleOutcome.Fail => {
-                apply_condition(creature, Fleeing, Duration.indefinite)
+                apply_condition(creature, Fleeing, Duration.Indefinite)
             },
             _ => {}
         }

@@ -34,17 +34,17 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     enum WildernessTerrainKind {
-        wt_clear,
-        wt_forest,
-        wt_hills,
-        wt_mountains,
-        wt_desert,
-        wt_swamp,
-        wt_jungle,
-        wt_ocean,
-        wt_river,
-        wt_barren,
-        wt_city
+        WtClear,
+        WtForest,
+        WtHills,
+        WtMountains,
+        WtDesert,
+        WtSwamp,
+        WtJungle,
+        WtOcean,
+        WtRiver,
+        WtBarren,
+        WtCity
     }
 
 
@@ -63,31 +63,31 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     table terrain_move_cost_num(terrain: WildernessTerrainKind) -> int {
-        wt_clear     => 1,
-        wt_city      => 1,
-        wt_ocean     => 1,
-        wt_barren    => 3,
-        wt_hills     => 3,
-        wt_forest    => 3,
-        wt_river     => 3,
-        wt_desert    => 2,
-        wt_jungle    => 2,
-        wt_swamp     => 2,
-        wt_mountains => 3
+        WtClear     => 1,
+        WtCity      => 1,
+        WtOcean     => 1,
+        WtBarren    => 3,
+        WtHills     => 3,
+        WtForest    => 3,
+        WtRiver     => 3,
+        WtDesert    => 2,
+        WtJungle    => 2,
+        WtSwamp     => 2,
+        WtMountains => 3
     }
 
     table terrain_move_cost_den(terrain: WildernessTerrainKind) -> int {
-        wt_clear     => 1,
-        wt_city      => 1,
-        wt_ocean     => 1,
-        wt_barren    => 2,
-        wt_hills     => 2,
-        wt_forest    => 2,
-        wt_river     => 2,
-        wt_desert    => 1,
-        wt_jungle    => 1,
-        wt_swamp     => 1,
-        wt_mountains => 1
+        WtClear     => 1,
+        WtCity      => 1,
+        WtOcean     => 1,
+        WtBarren    => 2,
+        WtHills     => 2,
+        WtForest    => 2,
+        WtRiver     => 2,
+        WtDesert    => 1,
+        WtJungle    => 1,
+        WtSwamp     => 1,
+        WtMountains => 1
     }
 
 
@@ -99,17 +99,17 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     table terrain_lost_chance(terrain: WildernessTerrainKind) -> int {
-        wt_clear     => 1,
-        wt_city      => 1,
-        wt_barren    => 1,
-        wt_hills     => 1,
-        wt_mountains => 1,
-        wt_forest    => 2,
-        wt_river     => 2,
-        wt_desert    => 2,
-        wt_ocean     => 2,
-        wt_swamp     => 2,
-        wt_jungle    => 2
+        WtClear     => 1,
+        WtCity      => 1,
+        WtBarren    => 1,
+        WtHills     => 1,
+        WtMountains => 1,
+        WtForest    => 2,
+        WtRiver     => 2,
+        WtDesert    => 2,
+        WtOcean     => 2,
+        WtSwamp     => 2,
+        WtJungle    => 2
     }
 
 
@@ -122,17 +122,17 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     table terrain_forage_chance(terrain: WildernessTerrainKind) -> int {
-        wt_forest    => 2,
-        wt_jungle    => 2,
-        wt_river     => 2,
-        wt_clear     => 1,
-        wt_hills     => 1,
-        wt_swamp     => 1,
-        wt_desert    => 1,
-        wt_mountains => 1,
-        wt_barren    => 0,
-        wt_ocean     => 0,
-        wt_city      => 0
+        WtForest    => 2,
+        WtJungle    => 2,
+        WtRiver     => 2,
+        WtClear     => 1,
+        WtHills     => 1,
+        WtSwamp     => 1,
+        WtDesert    => 1,
+        WtMountains => 1,
+        WtBarren    => 0,
+        WtOcean     => 0,
+        WtCity      => 0
     }
 
     // Whether foraging is possible in this terrain (forage_chance > 0).
@@ -150,17 +150,17 @@ system "OSE Wilderness" {
     // --------------------------------------------------------
 
     table terrain_encounter_chance(terrain: WildernessTerrainKind) -> int {
-        wt_city      => 1,
-        wt_clear     => 1,
-        wt_hills     => 1,
-        wt_barren    => 1,
-        wt_forest    => 2,
-        wt_desert    => 2,
-        wt_mountains => 2,
-        wt_swamp     => 2,
-        wt_jungle    => 2,
-        wt_ocean     => 2,
-        wt_river     => 2
+        WtCity      => 1,
+        WtClear     => 1,
+        WtHills     => 1,
+        WtBarren    => 1,
+        WtForest    => 2,
+        WtDesert    => 2,
+        WtMountains => 2,
+        WtSwamp     => 2,
+        WtJungle    => 2,
+        WtOcean     => 2,
+        WtRiver     => 2
     }
 
 

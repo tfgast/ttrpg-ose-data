@@ -172,19 +172,19 @@ system "OSE Ability" {
     // Encumbrance level from carried weight (in coins/cn).
     // OSE uses coins as the weight unit (1 cn = 1/10 lb).
     table encumbrance_level(weight: int) -> EncumbranceLevel {
-        0..=400    => EncumbranceLevel.unencumbered,
-        401..=600  => EncumbranceLevel.light,
-        601..=800  => EncumbranceLevel.heavy,
-        801..=1600 => EncumbranceLevel.severe,
-        _          => EncumbranceLevel.overloaded
+        0..=400    => EncumbranceLevel.Unencumbered,
+        401..=600  => EncumbranceLevel.Light,
+        601..=800  => EncumbranceLevel.Heavy,
+        801..=1600 => EncumbranceLevel.Severe,
+        _          => EncumbranceLevel.Overloaded
     }
 
     // Base movement rate (feet/turn) from encumbrance level.
     table movement_rate(enc: EncumbranceLevel) -> int {
-        unencumbered => 120,
-        light        =>  90,
-        heavy        =>  60,
-        severe       =>  30,
-        overloaded   =>   0
+        Unencumbered => 120,
+        Light        =>  90,
+        Heavy        =>  60,
+        Severe       =>  30,
+        Overloaded   =>   0
     }
 }

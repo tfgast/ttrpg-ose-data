@@ -24,12 +24,12 @@ system "OSE Spells" {
     // ========================================================
 
     enum SpellSaveType {
-        no_save,
-        sv_death,
-        sv_wands,
-        sv_paralysis,
-        sv_breath,
-        sv_spells
+        NoSave,
+        SvDeath,
+        SvWands,
+        SvParalysis,
+        SvBreath,
+        SvSpells
     }
 
     // ========================================================
@@ -47,76 +47,76 @@ system "OSE Spells" {
     table spell_save_type(spell_name: string) -> SpellSaveType {
 
             // --- Save vs Death (poison/death ray) ---
-            "Cloudkill"     => sv_death,
-            "Disintegrate"  => sv_death,
+            "Cloudkill"     => SvDeath,
+            "Disintegrate"  => SvDeath,
 
             // --- Save vs Spells (rods/staves/spells) ---
             // This is the most common save category for offensive spells.
 
             // Cleric
-            "Light"                     => sv_spells,
-            "Hold Person"               => sv_spells,
-            "Silence 15' Radius"        => sv_spells,
-            "Continual Light"           => sv_spells,
-            "Dispel Evil"               => sv_spells,
-            "Quest"                     => sv_spells,
+            "Light"                     => SvSpells,
+            "Hold Person"               => SvSpells,
+            "Silence 15' Radius"        => SvSpells,
+            "Continual Light"           => SvSpells,
+            "Dispel Evil"               => SvSpells,
+            "Quest"                     => SvSpells,
 
             // Druid
-            "Animal Friendship"         => sv_spells,
-            "Entangle"                  => sv_spells,
-            "Warp Wood"                 => sv_spells,
-            "Call Lightning"            => sv_spells,
-            "Hold Animal"               => sv_spells,
+            "Animal Friendship"         => SvSpells,
+            "Entangle"                  => SvSpells,
+            "Warp Wood"                 => SvSpells,
+            "Call Lightning"            => SvSpells,
+            "Hold Animal"               => SvSpells,
 
             // Magic-User
-            "Charm Person"              => sv_spells,
-            "Phantasmal Force"          => sv_spells,
-            "Web"                       => sv_spells,
-            "Fire Ball"                 => sv_spells,
-            "Lightning Bolt"            => sv_spells,
-            "Charm Monster"             => sv_spells,
-            "Confusion"                 => sv_spells,
-            "Polymorph Others"          => sv_spells,
-            "Feeblemind"                => sv_spells,
-            "Hold Monster"              => sv_spells,
-            "Magic Jar"                 => sv_spells,
-            "Geas"                      => sv_spells,
+            "Charm Person"              => SvSpells,
+            "Phantasmal Force"          => SvSpells,
+            "Web"                       => SvSpells,
+            "Fire Ball"                 => SvSpells,
+            "Lightning Bolt"            => SvSpells,
+            "Charm Monster"             => SvSpells,
+            "Confusion"                 => SvSpells,
+            "Polymorph Others"          => SvSpells,
+            "Feeblemind"                => SvSpells,
+            "Hold Monster"              => SvSpells,
+            "Magic Jar"                 => SvSpells,
+            "Geas"                      => SvSpells,
 
             // Illusionist
-            "Chromatic Orb"             => sv_spells,
-            "Colour Spray"              => sv_spells,
-            "Glamour"                   => sv_spells,
-            "Hypnotism"                 => sv_spells,
-            "Spook"                     => sv_spells,
-            "Blindness / Deafness"      => sv_spells,
-            "Fascinate"                 => sv_spells,
-            "Hypnotic Pattern"          => sv_spells,
-            "Improved Phantasmal Force" => sv_spells,
-            "Fear"                      => sv_spells,
-            "Paralysation"             => sv_spells,
-            "Spectral Force"            => sv_spells,
-            "Suggestion"                => sv_spells,
-            "Emotion"                   => sv_spells,
-            "Phantasmal Killer"         => sv_spells,
-            "Rainbow Pattern"           => sv_spells,
-            "Shadow Monsters"           => sv_spells,
-            "Veil of Abandonment"       => sv_spells,
-            "Chaos"                     => sv_spells,
-            "Demi-Shadow Monsters"      => sv_spells,
-            "Illusion"                  => sv_spells,
-            "Seeming"                   => sv_spells,
-            "Visitation"                => sv_spells,
-            "Dream Quest"               => sv_spells,
-            "Impersonation"             => sv_spells,
-            "Manifest Dream"            => sv_spells,
-            "Mass Suggestion"           => sv_spells,
-            "Permanent Illusion"        => sv_spells,
-            "Shades"                    => sv_spells,
-            "Through the Looking Glass" => sv_spells,
-            "Triggered Illusion"        => sv_spells,
+            "Chromatic Orb"             => SvSpells,
+            "Colour Spray"              => SvSpells,
+            "Glamour"                   => SvSpells,
+            "Hypnotism"                 => SvSpells,
+            "Spook"                     => SvSpells,
+            "Blindness / Deafness"      => SvSpells,
+            "Fascinate"                 => SvSpells,
+            "Hypnotic Pattern"          => SvSpells,
+            "Improved Phantasmal Force" => SvSpells,
+            "Fear"                      => SvSpells,
+            "Paralysation"             => SvSpells,
+            "Spectral Force"            => SvSpells,
+            "Suggestion"                => SvSpells,
+            "Emotion"                   => SvSpells,
+            "Phantasmal Killer"         => SvSpells,
+            "Rainbow Pattern"           => SvSpells,
+            "Shadow Monsters"           => SvSpells,
+            "Veil of Abandonment"       => SvSpells,
+            "Chaos"                     => SvSpells,
+            "Demi-Shadow Monsters"      => SvSpells,
+            "Illusion"                  => SvSpells,
+            "Seeming"                   => SvSpells,
+            "Visitation"                => SvSpells,
+            "Dream Quest"               => SvSpells,
+            "Impersonation"             => SvSpells,
+            "Manifest Dream"            => SvSpells,
+            "Mass Suggestion"           => SvSpells,
+            "Permanent Illusion"        => SvSpells,
+            "Shades"                    => SvSpells,
+            "Through the Looking Glass" => SvSpells,
+            "Triggered Illusion"        => SvSpells,
 
         // Default: no save required
-        _ => no_save
+        _ => NoSave
     }
 
 

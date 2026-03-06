@@ -64,16 +64,16 @@ system "OSE" {
 
     // --- Combat aptitude tiers ---
 
-    enum CombatAptitude { martial, semi_martial, non_martial }
+    enum CombatAptitude { Martial, SemiMartial, NonMartial }
 
     // --- Armour permission levels ---
 
     enum ArmourPermission {
-        any_armour,
-        any_no_shield,
-        leather_only,
-        leather_shield,
-        no_armour
+        AnyArmour,
+        AnyNoShield,
+        LeatherOnly,
+        LeatherShield,
+        NoArmour
     }
 
     // --- Spell progression categories (9 total) ---
@@ -125,24 +125,24 @@ system "OSE" {
     // --- Encumbrance levels ---
 
     enum EncumbranceLevel {
-        unencumbered,
-        light,
-        heavy,
-        severe,
-        overloaded
+        Unencumbered,
+        Light,
+        Heavy,
+        Severe,
+        Overloaded
     }
 
     // --- Thief skills (8 total) ---
 
     enum ThiefSkill {
-        climb_walls,
-        find_traps,
-        hear_noise,
-        hide_shadows,
-        move_silently,
-        open_locks,
-        pick_pockets,
-        read_languages
+        ClimbWalls,
+        FindTraps,
+        HearNoise,
+        HideShadows,
+        MoveSilently,
+        OpenLocks,
+        PickPockets,
+        ReadLanguages
     }
 
     // --- Turn undead results ---
