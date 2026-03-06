@@ -1,0 +1,111 @@
+// OSE Class Definitions & XP Tables integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_class_integration.rs
+// Tests class_def, xp_for_level, check_level_up, meets_requirements,
+// prime_req_xp_modifier, and adjust_xp derives.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── class_def: Fighter ──────────────────────────────────────────
+
+assert_eq class_def(Fighter).hit_die, 8
+assert_eq class_def(Fighter).max_level, 14
+assert_eq class_def(Fighter).weapons_any, true
+assert_eq class_def(Fighter).is_demihuman, false
+
+// ── class_def: Magic-User ───────────────────────────────────────
+
+assert_eq class_def(MagicUser).hit_die, 4
+assert_eq class_def(MagicUser).max_level, 14
+assert_eq class_def(MagicUser).weapons_any, false
+assert_eq class_def(MagicUser).weapons_blunt_only, false
+
+// ── class_def: Dwarf ────────────────────────────────────────────
+
+assert_eq class_def(Dwarf).hit_die, 8
+assert_eq class_def(Dwarf).max_level, 12
+assert_eq class_def(Dwarf).is_demihuman, true
+
+// ── xp_for_level: Fighter ───────────────────────────────────────
+
+assert_eq xp_for_level(Fighter, 1), 0
+assert_eq xp_for_level(Fighter, 2), 2000
+assert_eq xp_for_level(Fighter, 9), 240000
+assert_eq xp_for_level(Fighter, 14), 840000
+
+// ── xp_for_level: shared tables ─────────────────────────────────
+
+// Knight shares Fighter table
+assert_eq xp_for_level(Knight, 2), 2000
+
+// Acrobat shares Thief table
+assert_eq xp_for_level(Acrobat, 2), 1200
+
+// Duergar shares Dwarf table
+assert_eq xp_for_level(Duergar, 5), 17000
+
+// ── xp_for_level: demihuman tables ──────────────────────────────
+
+assert_eq xp_for_level(Elf, 2), 4000
+assert_eq xp_for_level(Halfling, 8), 120000
+assert_eq xp_for_level(Gnome, 4), 12000
+
+// ── xp_for_level: beyond max errors ─────────────────────────────
+
+// Halfling max level 8, level 9 should be no-match
+assert_err call xp_for_level(Halfling, 9)
+
+// ── check_level_up ──────────────────────────────────────────────
+
+// Fighter level 1 with 2000 XP can advance
+assert_eq check_level_up(Fighter, 1, 2000), true
+
+// Fighter level 1 with 3000 XP also can advance
+assert_eq check_level_up(Fighter, 1, 3000), true
+
+// Fighter level 1 with 1999 XP cannot advance
+assert_eq check_level_up(Fighter, 1, 1999), false
+
+// Halfling at max level 8, cannot advance regardless of XP
+assert_eq check_level_up(Halfling, 8, 999999), false
+
+// ── meets_requirements ──────────────────────────────────────────
+
+// Fighter has no requirements — all abilities at 3 should work
+assert_eq meets_requirements(Fighter, { STR: 3, DEX: 3, CON: 3, INT: 3, WIS: 3, CHA: 3 }), true
+
+// Barbarian needs STR 9, DEX 9, CON 9
+assert_eq meets_requirements(Barbarian, { STR: 9, DEX: 9, CON: 9, INT: 10, WIS: 10, CHA: 10 }), true
+
+// Barbarian STR too low
+assert_eq meets_requirements(Barbarian, { STR: 8, DEX: 9, CON: 9, INT: 10, WIS: 10, CHA: 10 }), false
+
+// Barbarian DEX too low
+assert_eq meets_requirements(Barbarian, { STR: 9, DEX: 8, CON: 9, INT: 10, WIS: 10, CHA: 10 }), false
+
+// Dwarf needs CON 9
+assert_eq meets_requirements(Dwarf, { STR: 10, DEX: 10, CON: 9, INT: 10, WIS: 10, CHA: 10 }), true
+assert_eq meets_requirements(Dwarf, { STR: 10, DEX: 10, CON: 8, INT: 10, WIS: 10, CHA: 10 }), false
+
+// ── prime_req_xp_modifier ───────────────────────────────────────
+
+// Fighter prime req is STR. STR 16 → +10%
+assert_eq prime_req_xp_modifier(Fighter, { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }), 10
+
+// Fighter STR 5 → -20%
+assert_eq prime_req_xp_modifier(Fighter, { STR: 5, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }), -20
+
+// Elf has STR + INT prime requisites, uses lowest.
+// STR 16, INT 10 → min is 10 → 0%
+assert_eq prime_req_xp_modifier(Elf, { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }), 0
+
+// ── adjust_xp ───────────────────────────────────────────────────
+
+assert_eq adjust_xp(1000, 10), 1100
+assert_eq adjust_xp(1000, 5), 1050
+assert_eq adjust_xp(1000, -10), 900
+assert_eq adjust_xp(1000, -20), 800
+assert_eq adjust_xp(1000, 0), 1000
