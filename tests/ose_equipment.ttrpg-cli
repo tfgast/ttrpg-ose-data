@@ -1,0 +1,29 @@
+// OSE Starting Equipment integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_equipment_integration.rs
+// Tests default_starting_armour, equipment_package,
+// random_starting_weapon, and get_random_starting_weapon.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── default_starting_armour ─────────────────────────────────────
+
+assert "Chainmail" in default_starting_armour(Fighter)
+assert "Shield" in default_starting_armour(Fighter)
+assert_eq default_starting_armour(Fighter).len(), 2
+
+assert_eq default_starting_armour(MagicUser).len(), 0
+
+// ── equipment_package ───────────────────────────────────────────
+
+assert_eq equipment_package(Fighter).len(), 9
+assert_eq equipment_package(Gnome).len(), 9
+
+// ── random_starting_weapon ──────────────────────────────────────
+
+assert_eq random_starting_weapon(Dwarf, 4), "War hammer"
+assert_eq get_random_starting_weapon(Dwarf, 4), "War hammer"
+assert_eq random_starting_weapon(Dwarf, 4), get_random_starting_weapon(Dwarf, 4)
