@@ -2,13 +2,14 @@
 //
 // Equivalent of the runtime tests in
 // crates/ttrpg_interp/tests/ose_saves_integration.rs
-// Tests convenience derives (get_save_*) across classes, levels, and tiers.
+// Tests convenience derives (get_save_*) across representative classes,
+// level tiers, boundary transitions, and error cases.
 //
 // AST structure tests remain in Rust.
 
 load ose/*.ttrpg
 
-// ── Fighter saves at level 1 ────────────────────────────────────
+// ── Fighter saves across all five tiers ─────────────────────────
 
 assert_eq get_save_death(Fighter, 1), 12
 assert_eq get_save_wands(Fighter, 1), 13
@@ -16,7 +17,11 @@ assert_eq get_save_paralysis(Fighter, 1), 14
 assert_eq get_save_breath(Fighter, 1), 15
 assert_eq get_save_spells(Fighter, 1), 16
 
-// ── Fighter saves at level 7 (tier boundary) ────────────────────
+assert_eq get_save_death(Fighter, 4), 10
+assert_eq get_save_wands(Fighter, 4), 11
+assert_eq get_save_paralysis(Fighter, 4), 12
+assert_eq get_save_breath(Fighter, 4), 13
+assert_eq get_save_spells(Fighter, 4), 14
 
 assert_eq get_save_death(Fighter, 7), 8
 assert_eq get_save_wands(Fighter, 7), 9
@@ -24,13 +29,61 @@ assert_eq get_save_paralysis(Fighter, 7), 10
 assert_eq get_save_breath(Fighter, 7), 10
 assert_eq get_save_spells(Fighter, 7), 12
 
-// ── Magic-User saves at level 11 ────────────────────────────────
+assert_eq get_save_death(Fighter, 10), 6
+assert_eq get_save_wands(Fighter, 10), 7
+assert_eq get_save_paralysis(Fighter, 10), 8
+assert_eq get_save_breath(Fighter, 10), 8
+assert_eq get_save_spells(Fighter, 10), 10
+
+assert_eq get_save_death(Fighter, 13), 4
+assert_eq get_save_wands(Fighter, 13), 5
+assert_eq get_save_paralysis(Fighter, 13), 6
+assert_eq get_save_breath(Fighter, 13), 5
+assert_eq get_save_spells(Fighter, 13), 8
+
+// ── Cleric and Magic-User tier boundaries ───────────────────────
+
+assert_eq get_save_death(Cleric, 4), 11
+assert_eq get_save_spells(Cleric, 4), 15
+assert_eq get_save_death(Cleric, 5), 9
+assert_eq get_save_wands(Cleric, 5), 10
+assert_eq get_save_paralysis(Cleric, 5), 12
+assert_eq get_save_breath(Cleric, 5), 14
+assert_eq get_save_spells(Cleric, 5), 12
+assert_eq get_save_death(Cleric, 13), 3
+assert_eq get_save_spells(Cleric, 13), 7
+
+assert_eq get_save_death(MagicUser, 5), 13
+assert_eq get_save_wands(MagicUser, 5), 14
+assert_eq get_save_paralysis(MagicUser, 5), 13
+assert_eq get_save_breath(MagicUser, 5), 16
+assert_eq get_save_spells(MagicUser, 5), 15
+
+assert_eq get_save_death(MagicUser, 6), 11
+assert_eq get_save_wands(MagicUser, 6), 12
+assert_eq get_save_paralysis(MagicUser, 6), 11
+assert_eq get_save_breath(MagicUser, 6), 14
+assert_eq get_save_spells(MagicUser, 6), 12
 
 assert_eq get_save_death(MagicUser, 11), 8
-assert_eq get_save_spells(MagicUser, 11), 8
+assert_eq get_save_wands(MagicUser, 11), 9
+assert_eq get_save_paralysis(MagicUser, 11), 8
 assert_eq get_save_breath(MagicUser, 11), 11
+assert_eq get_save_spells(MagicUser, 11), 8
 
-// ── Dwarf saves at level 10 (demihuman high tier) ───────────────
+// ── Thief-family progression ────────────────────────────────────
+
+assert_eq get_save_death(Thief, 4), 13
+assert_eq get_save_wands(Thief, 4), 14
+assert_eq get_save_death(Thief, 5), 12
+assert_eq get_save_paralysis(Thief, 5), 11
+assert_eq get_save_spells(Thief, 12), 10
+assert_eq get_save_breath(Thief, 13), 10
+
+assert_eq get_save_death(HalfOrc, 1), 13
+assert_eq get_save_spells(HalfOrc, 8), 13
+
+// ── Demihuman and specialty class coverage ──────────────────────
 
 assert_eq get_save_death(Dwarf, 10), 2
 assert_eq get_save_wands(Dwarf, 10), 3
@@ -38,15 +91,23 @@ assert_eq get_save_paralysis(Dwarf, 10), 4
 assert_eq get_save_breath(Dwarf, 10), 4
 assert_eq get_save_spells(Dwarf, 10), 6
 
-// ── Thief saves tier transitions ────────────────────────────────
+assert_eq get_save_death(Elf, 3), 12
+assert_eq get_save_spells(Elf, 10), 8
+assert_eq get_save_breath(HalfElf, 12), 8
+assert_eq get_save_spells(Drow, 10), 6
 
-// Level 4 (tier 1): death=13
-assert_eq get_save_death(Thief, 4), 13
+assert_eq get_save_breath(Gnome, 5), 14
+assert_eq get_save_breath(Gnome, 6), 11
+assert_eq get_save_spells(Svirfneblin, 8), 7
 
-// Level 5 (tier 2): death=12
-assert_eq get_save_death(Thief, 5), 12
+assert_eq get_save_death(Barbarian, 14), 3
+assert_eq get_save_paralysis(Barbarian, 14), 4
+assert_eq get_save_death(Paladin, 1), 10
+assert_eq get_save_breath(Paladin, 13), 3
 
 // ── Out-of-range level errors ───────────────────────────────────
 
-// Elf max level is 10, level 11 should produce a no-match error
+assert_err call get_save_death(Fighter, 0)
 assert_err call get_save_death(Elf, 11)
+assert_err call get_save_wands(Gnome, 9)
+assert_err call get_save_spells(Paladin, 15)

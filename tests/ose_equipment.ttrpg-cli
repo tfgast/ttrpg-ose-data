@@ -2,12 +2,24 @@
 //
 // Equivalent of the runtime tests in
 // crates/ttrpg_interp/tests/ose_equipment_integration.rs
-// Tests default_starting_armour, equipment_package,
-// random_starting_weapon, and get_random_starting_weapon.
+// Tests standard_adventuring_gear, default_starting_armour,
+// equipment_package, random_starting_weapon, and
+// get_random_starting_weapon.
 //
 // AST structure tests remain in Rust.
 
 load ose/*.ttrpg
+
+// ── standard_adventuring_gear ───────────────────────────────────
+
+assert_eq standard_adventuring_gear().len(), 6
+assert "Backpack" in standard_adventuring_gear()
+assert "Torches (6)" in standard_adventuring_gear()
+assert "Tinder box (flint &steel)" in standard_adventuring_gear()
+assert "Rations (iron, 7 days)" in standard_adventuring_gear()
+assert "Waterskin" in standard_adventuring_gear()
+assert "Rope (50')" in standard_adventuring_gear()
+assert ("Chainmail" in standard_adventuring_gear()) == false
 
 // ── default_starting_armour ─────────────────────────────────────
 
@@ -15,15 +27,84 @@ assert "Chainmail" in default_starting_armour(Fighter)
 assert "Shield" in default_starting_armour(Fighter)
 assert_eq default_starting_armour(Fighter).len(), 2
 
+assert_eq default_starting_armour(Cleric).len(), 2
+assert "Leather" in default_starting_armour(Thief)
+assert_eq default_starting_armour(Thief).len(), 1
+
+assert "Leather" in default_starting_armour(Druid)
+assert_eq default_starting_armour(Druid).len(), 1
+
+assert "Chainmail" in default_starting_armour(Elf)
+assert "Shield" in default_starting_armour(Elf)
+assert_eq default_starting_armour(Elf).len(), 2
+
 assert_eq default_starting_armour(MagicUser).len(), 0
 
 // ── equipment_package ───────────────────────────────────────────
 
 assert_eq equipment_package(Fighter).len(), 9
+assert "Sword" in equipment_package(Fighter)
+assert "Shield" in equipment_package(Fighter)
+assert "Chainmail" in equipment_package(Fighter)
+assert "Backpack" in equipment_package(Fighter)
+assert "Rope (50')" in equipment_package(Fighter)
+
+assert_eq equipment_package(Knight).len(), 8
+assert "Plate mail" in equipment_package(Knight)
+assert ("Rope (50')" in equipment_package(Knight)) == false
+
+assert_eq equipment_package(Ranger).len(), 10
+assert "Short bow" in equipment_package(Ranger)
+assert "Arrows (quiver of 20)" in equipment_package(Ranger)
+assert "Leather" in equipment_package(Ranger)
+assert ("Shield" in equipment_package(Ranger)) == false
+
+assert_eq equipment_package(Cleric).len(), 9
+assert "Mace" in equipment_package(Cleric)
+assert "Holy symbol" in equipment_package(Cleric)
+
+assert_eq equipment_package(Druid).len(), 9
+assert "Staff" in equipment_package(Druid)
+assert "Leather" in equipment_package(Druid)
+assert "Wolfsbane (1 bunch)" in equipment_package(Druid)
+
+assert_eq equipment_package(Thief).len(), 10
+assert "Short sword" in equipment_package(Thief)
+assert "Dagger" in equipment_package(Thief)
+assert "Thieves' tools" in equipment_package(Thief)
+
+assert_eq equipment_package(MagicUser).len(), 8
+assert "Dagger" in equipment_package(MagicUser)
+assert "Staff" in equipment_package(MagicUser)
+assert "Oil (1 flask)" in equipment_package(MagicUser)
+assert ("Chainmail" in equipment_package(MagicUser)) == false
+
 assert_eq equipment_package(Gnome).len(), 9
+assert "Sling" in equipment_package(Gnome)
+assert "Sling stones" in equipment_package(Gnome)
+assert "Leather" in equipment_package(Gnome)
+
+assert_eq equipment_package(Halfling).len(), 10
+assert "Short sword" in equipment_package(Halfling)
+assert "Sling" in equipment_package(Halfling)
+assert "Shield" in equipment_package(Halfling)
 
 // ── random_starting_weapon ──────────────────────────────────────
 
+assert_eq random_starting_weapon(Fighter, 1), "Sword"
+assert_eq random_starting_weapon(Fighter, 2), "Sword"
+assert_eq random_starting_weapon(Fighter, 3), "Battle axe"
+assert_eq random_starting_weapon(Fighter, 4), "Battle axe"
+assert_eq random_starting_weapon(Fighter, 5), "Two-handed sword"
+assert_eq random_starting_weapon(Fighter, 6), "Two-handed sword"
+
+assert_eq random_starting_weapon(Cleric, 6), "Staff"
 assert_eq random_starting_weapon(Dwarf, 4), "War hammer"
+assert_eq random_starting_weapon(MagicUser, 5), "Silver dagger"
+assert_eq random_starting_weapon(Halfling, 6), "Short bow"
+
 assert_eq get_random_starting_weapon(Dwarf, 4), "War hammer"
 assert_eq random_starting_weapon(Dwarf, 4), get_random_starting_weapon(Dwarf, 4)
+
+assert_err call random_starting_weapon(Fighter, 0)
+assert_err call random_starting_weapon(Fighter, 7)
