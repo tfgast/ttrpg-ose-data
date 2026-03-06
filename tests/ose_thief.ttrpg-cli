@@ -1,0 +1,76 @@
+// OSE Thief Skills integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_thief_integration.rs
+// Tests skill_chance table, backstab_multiplier, has_thief_skills,
+// can_backstab, thief_skill_check, and hear_noise_check.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── skill_chance: Climb Walls ───────────────────────────────────
+
+assert_eq skill_chance(ClimbWalls, 1), 87
+assert_eq skill_chance(ClimbWalls, 7), 93
+assert_eq skill_chance(ClimbWalls, 14), 99
+
+// ── skill_chance: Hear Noise ranges ─────────────────────────────
+
+assert_eq skill_chance(HearNoise, 1), 2
+assert_eq skill_chance(HearNoise, 5), 3
+assert_eq skill_chance(HearNoise, 10), 4
+assert_eq skill_chance(HearNoise, 14), 5
+
+// ── skill_chance: Read Languages ────────────────────────────────
+
+// Not available before level 4
+assert_eq skill_chance(ReadLanguages, 3), 0
+
+// Acquired at level 4
+assert_eq skill_chance(ReadLanguages, 4), 80
+
+// ── skill_chance: Pick Pockets exceeds 100 ──────────────────────
+
+assert_eq skill_chance(PickPockets, 14), 125
+
+// ── backstab_multiplier ─────────────────────────────────────────
+
+assert_eq backstab_multiplier(1), 2
+assert_eq backstab_multiplier(4), 2
+assert_eq backstab_multiplier(5), 3
+assert_eq backstab_multiplier(9), 4
+assert_eq backstab_multiplier(14), 5
+
+// ── has_thief_skills ────────────────────────────────────────────
+
+assert_eq has_thief_skills(Thief), true
+assert_eq has_thief_skills(Acrobat), true
+assert_eq has_thief_skills(Fighter), false
+assert_eq has_thief_skills(Class.Cleric), false
+
+// ── can_backstab ────────────────────────────────────────────────
+
+assert_eq can_backstab(Thief), true
+assert_eq can_backstab(Assassin), true
+assert_eq can_backstab(Acrobat), false
+
+// ── thief_skill_check mechanic ──────────────────────────────────
+
+// Open locks level 1 chance = 15. Roll 10 → 10 <= 15 → true
+rolls 10
+assert_eq thief_skill_check(OpenLocks, 1), true
+
+// Open locks level 1 chance = 15. Roll 50 → 50 > 15 → false
+rolls 50
+assert_eq thief_skill_check(OpenLocks, 1), false
+
+// ── hear_noise_check mechanic ───────────────────────────────────
+
+// Level 1 target = 2. Roll 2 → 2 <= 2 → true
+rolls 2
+assert_eq hear_noise_check(1), true
+
+// Level 1 target = 2. Roll 5 → 5 > 2 → false
+rolls 5
+assert_eq hear_noise_check(1), false
