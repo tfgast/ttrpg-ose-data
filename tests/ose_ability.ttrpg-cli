@@ -1,0 +1,195 @@
+// OSE Ability Modifiers & Encumbrance integration tests
+//
+// Equivalent of crates/ttrpg_interp/tests/ose_ability_integration.rs
+// Tests all ability modifier tables, prime requisite XP modifier,
+// encumbrance level, and movement rate.
+//
+// AST structure tests (system names, table counts) remain in Rust.
+
+load ose/*.ttrpg
+
+// ── STR melee modifier ──────────────────────────────────────────
+
+assert_eq str_melee_mod(3), -3
+assert_eq str_melee_mod(4), -2
+assert_eq str_melee_mod(5), -2
+assert_eq str_melee_mod(6), -1
+assert_eq str_melee_mod(8), -1
+assert_eq str_melee_mod(9), 0
+assert_eq str_melee_mod(12), 0
+assert_eq str_melee_mod(13), 1
+assert_eq str_melee_mod(15), 1
+assert_eq str_melee_mod(16), 2
+assert_eq str_melee_mod(17), 2
+assert_eq str_melee_mod(18), 3
+
+// ── STR open doors ──────────────────────────────────────────────
+
+assert_eq str_open_doors(3), 1
+assert_eq str_open_doors(5), 1
+assert_eq str_open_doors(8), 1
+assert_eq str_open_doors(9), 2
+assert_eq str_open_doors(12), 2
+assert_eq str_open_doors(13), 3
+assert_eq str_open_doors(15), 3
+assert_eq str_open_doors(16), 4
+assert_eq str_open_doors(17), 4
+assert_eq str_open_doors(18), 5
+
+// ── DEX modifier ────────────────────────────────────────────────
+
+assert_eq dex_mod(3), -3
+assert_eq dex_mod(5), -2
+assert_eq dex_mod(7), -1
+assert_eq dex_mod(10), 0
+assert_eq dex_mod(14), 1
+assert_eq dex_mod(17), 2
+assert_eq dex_mod(18), 3
+
+// ── DEX initiative modifier ────────────────────────────────────
+
+assert_eq dex_init_mod(3), -2
+assert_eq dex_init_mod(5), -1
+assert_eq dex_init_mod(7), -1
+assert_eq dex_init_mod(10), 0
+assert_eq dex_init_mod(14), 1
+assert_eq dex_init_mod(17), 1
+assert_eq dex_init_mod(18), 2
+
+// ── CON HP modifier ─────────────────────────────────────────────
+
+assert_eq con_hp_mod(3), -3
+assert_eq con_hp_mod(4), -2
+assert_eq con_hp_mod(6), -1
+assert_eq con_hp_mod(9), 0
+assert_eq con_hp_mod(13), 1
+assert_eq con_hp_mod(16), 2
+assert_eq con_hp_mod(18), 3
+
+// ── INT extra languages ─────────────────────────────────────────
+
+assert_eq int_extra_languages(3), 0
+assert_eq int_extra_languages(8), 0
+assert_eq int_extra_languages(12), 0
+assert_eq int_extra_languages(13), 1
+assert_eq int_extra_languages(15), 1
+assert_eq int_extra_languages(16), 2
+assert_eq int_extra_languages(17), 2
+assert_eq int_extra_languages(18), 3
+
+// ── WIS magic save modifier ────────────────────────────────────
+
+assert_eq wis_magic_save_mod(3), -3
+assert_eq wis_magic_save_mod(5), -2
+assert_eq wis_magic_save_mod(7), -1
+assert_eq wis_magic_save_mod(10), 0
+assert_eq wis_magic_save_mod(14), 1
+assert_eq wis_magic_save_mod(17), 2
+assert_eq wis_magic_save_mod(18), 3
+
+// ── CHA reaction modifier ──────────────────────────────────────
+
+assert_eq cha_reaction_mod(3), -2
+assert_eq cha_reaction_mod(5), -1
+assert_eq cha_reaction_mod(7), -1
+assert_eq cha_reaction_mod(10), 0
+assert_eq cha_reaction_mod(14), 1
+assert_eq cha_reaction_mod(17), 1
+assert_eq cha_reaction_mod(18), 2
+
+// ── CHA max retainers ──────────────────────────────────────────
+
+assert_eq cha_max_retainers(3), 1
+assert_eq cha_max_retainers(5), 2
+assert_eq cha_max_retainers(7), 3
+assert_eq cha_max_retainers(10), 4
+assert_eq cha_max_retainers(14), 5
+assert_eq cha_max_retainers(17), 6
+assert_eq cha_max_retainers(18), 7
+
+// ── CHA loyalty ─────────────────────────────────────────────────
+
+assert_eq cha_loyalty(3), 4
+assert_eq cha_loyalty(5), 5
+assert_eq cha_loyalty(7), 6
+assert_eq cha_loyalty(10), 7
+assert_eq cha_loyalty(14), 8
+assert_eq cha_loyalty(17), 9
+assert_eq cha_loyalty(18), 10
+
+// ── Prime requisite XP modifier ─────────────────────────────────
+
+assert_eq prime_req_xp_mod(3), -20
+assert_eq prime_req_xp_mod(5), -20
+assert_eq prime_req_xp_mod(6), -10
+assert_eq prime_req_xp_mod(8), -10
+assert_eq prime_req_xp_mod(9), 0
+assert_eq prime_req_xp_mod(12), 0
+assert_eq prime_req_xp_mod(13), 5
+assert_eq prime_req_xp_mod(15), 5
+assert_eq prime_req_xp_mod(16), 10
+assert_eq prime_req_xp_mod(18), 10
+
+// ── Encumbrance level ───────────────────────────────────────────
+
+assert_eq encumbrance_level(0), Unencumbered
+assert_eq encumbrance_level(400), Unencumbered
+assert_eq encumbrance_level(401), EncumbranceLevel.Light
+assert_eq encumbrance_level(600), EncumbranceLevel.Light
+assert_eq encumbrance_level(601), Heavy
+assert_eq encumbrance_level(800), Heavy
+assert_eq encumbrance_level(801), Severe
+assert_eq encumbrance_level(1600), Severe
+assert_eq encumbrance_level(1601), Overloaded
+assert_eq encumbrance_level(5000), Overloaded
+
+// ── Movement rate ───────────────────────────────────────────────
+
+assert_eq movement_rate(Unencumbered), 120
+assert_eq movement_rate(EncumbranceLevel.Light), 90
+assert_eq movement_rate(Heavy), 60
+assert_eq movement_rate(Severe), 30
+assert_eq movement_rate(Overloaded), 0
+
+// ── Standard modifier boundary checks ───────────────────────────
+// STR melee, DEX, CON, WIS all share the same breakpoints.
+
+// Boundary: 3 → -3, 4 → -2
+assert_eq str_melee_mod(3), -3
+assert_eq str_melee_mod(4), -2
+assert_eq dex_mod(3), -3
+assert_eq dex_mod(4), -2
+assert_eq con_hp_mod(3), -3
+assert_eq con_hp_mod(4), -2
+assert_eq wis_magic_save_mod(3), -3
+assert_eq wis_magic_save_mod(4), -2
+
+// Boundary: 8 → -1, 9 → 0
+assert_eq str_melee_mod(8), -1
+assert_eq str_melee_mod(9), 0
+assert_eq dex_mod(8), -1
+assert_eq dex_mod(9), 0
+assert_eq con_hp_mod(8), -1
+assert_eq con_hp_mod(9), 0
+assert_eq wis_magic_save_mod(8), -1
+assert_eq wis_magic_save_mod(9), 0
+
+// Boundary: 12 → 0, 13 → +1
+assert_eq str_melee_mod(12), 0
+assert_eq str_melee_mod(13), 1
+assert_eq dex_mod(12), 0
+assert_eq dex_mod(13), 1
+assert_eq con_hp_mod(12), 0
+assert_eq con_hp_mod(13), 1
+assert_eq wis_magic_save_mod(12), 0
+assert_eq wis_magic_save_mod(13), 1
+
+// Boundary: 17 → +2, 18 → +3
+assert_eq str_melee_mod(17), 2
+assert_eq str_melee_mod(18), 3
+assert_eq dex_mod(17), 2
+assert_eq dex_mod(18), 3
+assert_eq con_hp_mod(17), 2
+assert_eq con_hp_mod(18), 3
+assert_eq wis_magic_save_mod(17), 2
+assert_eq wis_magic_save_mod(18), 3
