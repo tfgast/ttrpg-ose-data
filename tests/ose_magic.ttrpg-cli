@@ -1,0 +1,114 @@
+// OSE magic and turn undead integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_magic_integration.rs
+// Tests spell slot progression lookups, can_cast/total_spell_slots,
+// turn_undead_result, undead_rank_from_hd, and turn_undead_attempt.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── Spell slot progression lookups ──────────────────────────────
+
+assert_eq spell_slots(SpellProgression.NonCaster, 14), [0, 0, 0, 0, 0, 0]
+
+assert_eq spell_slots(SpellProgression.Cleric, 2), [1, 0, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Cleric, 14), [6, 5, 5, 5, 4, 0]
+
+assert_eq spell_slots(SpellProgression.ArcaneFull, 1), [1, 0, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.ArcaneFull, 14), [4, 4, 4, 4, 3, 3]
+
+assert_eq spell_slots(SpellProgression.Druid, 7), [3, 3, 2, 2, 1, 0]
+assert_eq spell_slots(SpellProgression.Bard, 2), [1, 0, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Bard, 14), [4, 4, 3, 3, 0, 0]
+assert_eq spell_slots(SpellProgression.HalfElf, 8), [2, 2, 1, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Paladin, 9), [1, 0, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Ranger, 10), [2, 1, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Drow, 1), [1, 0, 0, 0, 0, 0]
+assert_eq spell_slots(SpellProgression.Drow, 10), [4, 4, 4, 3, 3, 0]
+
+// ── can_cast and total_spell_slots ──────────────────────────────
+
+assert (can_cast(SpellProgression.Cleric, 1)) == false
+assert can_cast(SpellProgression.Cleric, 2)
+assert (can_cast(SpellProgression.Paladin, 8)) == false
+
+assert_eq total_spell_slots(SpellProgression.ArcaneFull, 5), 5
+assert_eq total_spell_slots(SpellProgression.Cleric, 14), 25
+assert_eq total_spell_slots(SpellProgression.NonCaster, 14), 0
+
+// ── turn_undead_result table coverage ───────────────────────────
+
+let skeleton_1 = turn_undead_result(1, 1)
+assert_match skeleton_1, TurnResult.Roll
+assert_eq skeleton_1.target, 7
+
+assert_match turn_undead_result(2, 1), TurnResult.Turned
+assert_match turn_undead_result(4, 1), TurnResult.Destroyed
+
+let zombie_1 = turn_undead_result(1, 2)
+assert_match zombie_1, TurnResult.Roll
+assert_eq zombie_1.target, 9
+assert_match turn_undead_result(5, 2), TurnResult.Destroyed
+
+let ghoul_1 = turn_undead_result(1, 3)
+assert_match ghoul_1, TurnResult.Roll
+assert_eq ghoul_1.target, 11
+
+assert_match turn_undead_result(1, 4), TurnResult.Impossible
+
+let vampire_6 = turn_undead_result(6, 8)
+assert_match vampire_6, TurnResult.Roll
+assert_eq vampire_6.target, 11
+
+let vampire_8 = turn_undead_result(8, 8)
+assert_match vampire_8, TurnResult.Roll
+assert_eq vampire_8.target, 7
+
+assert_match turn_undead_result(9, 8), TurnResult.Turned
+assert_match turn_undead_result(11, 8), TurnResult.Destroyed
+
+assert_match turn_undead_result(6, 9), TurnResult.Impossible
+assert_match turn_undead_result(12, 9), TurnResult.Destroyed
+
+// ── undead_rank_from_hd clamps and maps ─────────────────────────
+
+assert_eq undead_rank_from_hd(0), 1
+assert_eq undead_rank_from_hd(1), 1
+assert_eq undead_rank_from_hd(4), 4
+assert_eq undead_rank_from_hd(8), 8
+assert_eq undead_rank_from_hd(9), 9
+assert_eq undead_rank_from_hd(15), 9
+assert_eq undead_rank_from_hd(100), 9
+
+// ── turn_undead_attempt mechanic coverage ───────────────────────
+
+assert_match turn_undead_attempt(1, 4), TurnAttempt.Impossible
+
+rolls clear
+rolls 1 2
+let failed_turn = turn_undead_attempt(1, 1)
+assert_match failed_turn, TurnAttempt.Failed
+assert_eq failed_turn.roll, 3
+assert_eq failed_turn.target, 7
+
+rolls clear
+rolls 4 3 2 5
+let rolled_turn = turn_undead_attempt(1, 1)
+assert_match rolled_turn, TurnAttempt.Rolled
+assert_eq rolled_turn.roll, 7
+assert_eq rolled_turn.target, 7
+assert_eq rolled_turn.hd, 7
+
+rolls clear
+rolls 2 6
+let auto_turn = turn_undead_attempt(2, 1)
+assert_match auto_turn, TurnAttempt.Auto
+assert_eq auto_turn.hd, 8
+
+rolls clear
+rolls 6 6
+let destroy_turn = turn_undead_attempt(4, 1)
+assert_match destroy_turn, TurnAttempt.Destroy
+assert_eq destroy_turn.hd, 12

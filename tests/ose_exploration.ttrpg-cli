@@ -1,0 +1,72 @@
+// OSE exploration orchestration integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_exploration_integration.rs
+// Tests exploration phase sequencing, action-phase dispatch,
+// phase skip rules, and exploration mechanics with scripted dice.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── Exploration turn phases ─────────────────────────────────────
+
+assert_eq exploration_turn_phases(), [ExplorationPhase.CheckLight, ExplorationPhase.AdvanceTime, ExplorationPhase.CheckRest, ExplorationPhase.ExecuteAction, ExplorationPhase.LightSummary, ExplorationPhase.WanderingMonsterCheck]
+
+// ── Exploration action phases ───────────────────────────────────
+
+assert_eq exploration_action_phases(ExplorationAction.ExpAdvance), [ExplorationActionPhase.MarkExplored]
+assert_eq exploration_action_phases(ExplorationAction.ExpSearch), [ExplorationActionPhase.RollSearch, ExplorationActionPhase.ReportFindings, ExplorationActionPhase.TreasureCheck]
+assert_eq exploration_action_phases(ExplorationAction.ExpListen), [ExplorationActionPhase.ValidateDoors, ExplorationActionPhase.RollListen]
+assert_eq exploration_action_phases(ExplorationAction.ExpMove), [ExplorationActionPhase.ValidateDoor, ExplorationActionPhase.TransitionRoom, ExplorationActionPhase.CheckTrap, ExplorationActionPhase.SpawnMonsters]
+assert_eq exploration_action_phases(ExplorationAction.ExpForce), [ExplorationActionPhase.ValidateDoor, ExplorationActionPhase.RollForce]
+assert_eq exploration_action_phases(ExplorationAction.ExpPick), [ExplorationActionPhase.ValidateLock, ExplorationActionPhase.ValidateThiefSkill, ExplorationActionPhase.RollPick]
+
+// ── Phase skip rules ────────────────────────────────────────────
+
+assert_eq skip_exploration_phase(ExplorationPhase.CheckLight, false, true), false
+assert_eq skip_exploration_phase(ExplorationPhase.AdvanceTime, false, true), true
+assert_eq skip_exploration_phase(ExplorationPhase.CheckRest, true, false), true
+assert_eq skip_exploration_phase(ExplorationPhase.ExecuteAction, true, true), false
+
+// ── Threshold derives ───────────────────────────────────────────
+
+assert_eq wandering_monster_interval(), 2
+assert_eq search_room_threshold(false), 1
+assert_eq search_room_threshold(true), 2
+assert_eq listen_at_door_threshold(false), 1
+assert_eq listen_at_door_threshold(true), 2
+
+// ── Wandering monster checks ────────────────────────────────────
+
+rolls clear
+rolls 1
+assert_eq wandering_monster_roll(), true
+
+rolls clear
+rolls 3
+assert_eq wandering_monster_roll(), false
+
+// ── Search room checks ──────────────────────────────────────────
+
+// Elf threshold is 2-in-6.
+rolls clear
+rolls 2
+assert_eq search_room_roll(true), true
+
+// Human threshold is 1-in-6.
+rolls clear
+rolls 2
+assert_eq search_room_roll(false), false
+
+// ── Listen at door checks ───────────────────────────────────────
+
+// Demihuman threshold is 2-in-6.
+rolls clear
+rolls 2
+assert_eq listen_at_door_roll(true), true
+
+// Human threshold is 1-in-6.
+rolls clear
+rolls 2
+assert_eq listen_at_door_roll(false), false

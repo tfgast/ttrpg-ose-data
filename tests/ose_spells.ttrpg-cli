@@ -1,0 +1,45 @@
+// OSE spell metadata integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_spells_integration.rs
+// Tests spell_save_type and spell_damage_dice lookups.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── spell_save_type lookups ────────────────────────────────────
+
+assert_eq spell_save_type("Cloudkill"), SpellSaveType.SvDeath
+assert_eq spell_save_type("Disintegrate"), SpellSaveType.SvDeath
+
+assert_eq spell_save_type("Hold Person"), SpellSaveType.SvSpells
+assert_eq spell_save_type("Fire Ball"), SpellSaveType.SvSpells
+assert_eq spell_save_type("Animal Friendship"), SpellSaveType.SvSpells
+assert_eq spell_save_type("Colour Spray"), SpellSaveType.SvSpells
+
+assert_eq spell_save_type("Unknown Spell"), SpellSaveType.NoSave
+assert_eq spell_save_type("Magic Missile"), SpellSaveType.NoSave
+assert_eq spell_save_type("Sleep"), SpellSaveType.NoSave
+
+// ── spell_damage_dice lookups ──────────────────────────────────
+
+assert_eq spell_damage_dice("Cure Light Wounds"), "1d6+1"
+assert_eq spell_damage_dice("Cure Serious Wounds"), "2d6+2"
+
+assert_eq spell_damage_dice("Magic Missile"), "1d6+1 per missile"
+assert_eq spell_damage_dice("Fire Ball"), "1d6 per caster level"
+assert_eq spell_damage_dice("Lightning Bolt"), "1d6 per caster level"
+assert_eq spell_damage_dice("Wall of Fire"), "1d6 per 2 caster levels"
+assert_eq spell_damage_dice("Call Lightning"), "8d6"
+
+assert_eq spell_damage_dice("Chromatic Orb"), "1d4 to 2d8 by caster level"
+assert_eq spell_damage_dice("Heat Metal"), "variable by round"
+assert_eq spell_damage_dice("Wall of Thorns"), "1d8 per 10 feet"
+
+assert_eq spell_damage_dice("Sleep"), "2d8 HD affected"
+assert_eq spell_damage_dice("Death Spell"), "4d8 HD killed"
+assert_eq spell_damage_dice("Cloudkill"), "instant death under 5 HD"
+
+assert_eq spell_damage_dice("Unknown Spell"), ""
+assert_eq spell_damage_dice("Hold Person"), ""

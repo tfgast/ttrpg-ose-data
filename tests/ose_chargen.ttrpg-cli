@@ -1,0 +1,97 @@
+// OSE character generation integration tests
+//
+// Equivalent of the runtime tests in
+// crates/ttrpg_interp/tests/ose_chargen_integration.rs
+// Tests chargen mechanics, spell selection tables, THAC0 lookups,
+// and other script-suitable derives.
+//
+// AST structure tests remain in Rust.
+
+load ose/*.ttrpg
+
+// ── Core chargen derives ────────────────────────────────────────
+
+assert_eq base_ac(-1), 10
+assert_eq base_ac(0), 9
+assert_eq base_ac(2), 7
+
+assert_eq base_movement(Fighter), 120
+assert_eq base_movement(MagicUser), 120
+assert_eq base_movement(Halfling), 120
+
+assert_eq racial_modifiers(Drow), [0, 0, 0, 1, -1, 0]
+assert_eq racial_modifiers(HalfOrc), [1, 0, 0, 0, 1, -2]
+assert_eq racial_modifiers(Fighter), [0, 0, 0, 0, 0, 0]
+
+// ── Spellbook caster and starting spell selection ───────────────
+
+assert_eq is_spellbook_caster(MagicUser), true
+assert_eq is_spellbook_caster(HalfElf), true
+assert_eq is_spellbook_caster(Fighter), false
+assert_eq is_spellbook_caster(Cleric), false
+
+assert_eq starting_spellbook(MagicUser).len(), 2
+assert "Read Magic" in starting_spellbook(MagicUser)
+assert "Sleep" in starting_spellbook(MagicUser)
+
+assert_eq starting_spellbook(Drow).len(), 2
+assert "Charm Person" in starting_spellbook(Drow)
+
+assert_eq starting_spellbook(Cleric).len(), 0
+
+assert_eq available_starting_spells(NoList).len(), 0
+
+assert_eq available_starting_spells(Druid).len(), 8
+assert "Animal Friendship" in available_starting_spells(Druid)
+assert "Speak with Animals" in available_starting_spells(Druid)
+
+assert_eq available_starting_spells(MagicUser).len(), 12
+assert "Magic Missile" in available_starting_spells(MagicUser)
+assert "Read Magic" in available_starting_spells(MagicUser)
+
+assert_eq available_starting_spells(DrowArcaneDivine).len(), 14
+assert "Cure Light Wounds" in available_starting_spells(DrowArcaneDivine)
+assert "Charm Person" in available_starting_spells(DrowArcaneDivine)
+
+// ── THAC0 table and wrapper ─────────────────────────────────────
+
+assert_eq character_thac0(Martial, 1), 19
+assert_eq character_thac0(Martial, 5), 17
+assert_eq character_thac0(Martial, 9), 14
+assert_eq character_thac0(Martial, 12), 12
+assert_eq character_thac0(Martial, 13), 10
+
+assert_eq character_thac0(SemiMartial, 4), 19
+assert_eq character_thac0(SemiMartial, 5), 17
+assert_eq character_thac0(SemiMartial, 9), 14
+assert_eq character_thac0(SemiMartial, 13), 12
+
+assert_eq character_thac0(NonMartial, 5), 19
+assert_eq character_thac0(NonMartial, 6), 17
+assert_eq character_thac0(NonMartial, 11), 14
+
+assert_eq get_character_thac0(Martial, 5), 17
+assert_eq get_character_thac0(SemiMartial, 9), character_thac0(SemiMartial, 9)
+assert_eq get_character_thac0(NonMartial, 11), character_thac0(NonMartial, 11)
+
+// ── Dice-driven chargen mechanics ───────────────────────────────
+
+rolls clear
+rolls 6 5 4
+assert_eq roll_ability(), 15
+
+rolls clear
+rolls 1
+assert_eq roll_starting_hp(4, -3), 1
+
+rolls clear
+rolls 6
+assert_eq roll_starting_hp(8, 2), 8
+
+rolls clear
+rolls 3 3 4
+assert_eq roll_starting_gold(Fighter), 100
+
+rolls clear
+rolls 6 6 6
+assert_eq roll_starting_gold(MagicUser), 180
