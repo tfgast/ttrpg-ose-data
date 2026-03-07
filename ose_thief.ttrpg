@@ -154,9 +154,7 @@ system "OSE" {
     // --- Backstab ---
 
     // Backstab attack bonus: flat +4 to hit (per OSE Rules Tome).
-    derive backstab_attack_bonus() -> int {
-        4
-    }
+    const BACKSTAB_ATTACK_BONUS: int = 4
 
     // Backstab damage multiplier by level.
     derive backstab_multiplier(level: int) -> int {

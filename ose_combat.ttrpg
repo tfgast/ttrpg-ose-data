@@ -235,18 +235,16 @@ system "OSE Combat" {
     }
 
     // Combat round phases in execution order.
-    derive phase_sequence() -> list<CombatPhase> {
-        [
-            CombatPhase.Declaration,
-            CombatPhase.Initiative,
-            CombatPhase.Morale,
-            CombatPhase.Movement,
-            CombatPhase.Missile,
-            CombatPhase.Magic,
-            CombatPhase.Melee,
-            CombatPhase.EndOfRound
-        ]
-    }
+    const PHASE_SEQUENCE: list<CombatPhase> = [
+        CombatPhase.Declaration,
+        CombatPhase.Initiative,
+        CombatPhase.Morale,
+        CombatPhase.Movement,
+        CombatPhase.Missile,
+        CombatPhase.Magic,
+        CombatPhase.Melee,
+        CombatPhase.EndOfRound
+    ]
 
     // Per-phase action budget for a combatant.
     // Takes actor so conditions (e.g. Surprised) can modify per-entity.
@@ -306,9 +304,7 @@ system "OSE Combat" {
     }
 
     // Initiative model: "group" = 1d6 per side (OSE default).
-    derive initiative_model() -> string {
-        "group"
-    }
+    const INITIATIVE_MODEL: string = "group"
 
 
     // ────────────────── Events ──────────────────────

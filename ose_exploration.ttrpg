@@ -80,16 +80,14 @@ system "OSE Exploration" {
     //  phases (e.g., wilderness tracking, exhaustion mechanics).
     // ========================================================
 
-    derive exploration_turn_phases() -> list<ExplorationPhase> {
-        [
-            ExplorationPhase.CheckLight,
-            ExplorationPhase.AdvanceTime,
-            ExplorationPhase.CheckRest,
-            ExplorationPhase.ExecuteAction,
-            ExplorationPhase.LightSummary,
-            ExplorationPhase.WanderingMonsterCheck
-        ]
-    }
+    const EXPLORATION_TURN_PHASES: list<ExplorationPhase> = [
+        ExplorationPhase.CheckLight,
+        ExplorationPhase.AdvanceTime,
+        ExplorationPhase.CheckRest,
+        ExplorationPhase.ExecuteAction,
+        ExplorationPhase.LightSummary,
+        ExplorationPhase.WanderingMonsterCheck
+    ]
 
 
     // ========================================================
@@ -177,9 +175,7 @@ system "OSE Exploration" {
 
     // Number of dungeon turns between wandering monster checks.
     // OSE: roll every 2 turns (each turn = 10 minutes).
-    derive wandering_monster_interval() -> int {
-        2
-    }
+    const WANDERING_MONSTER_INTERVAL: int = 2
 
     // Wandering monster check: rolls 1d6, triggers on a 1.
     // OSE: 1-in-6 chance per check interval.

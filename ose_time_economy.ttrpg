@@ -40,15 +40,11 @@ system "OSE Time Economy" {
 
     // Turns of activity before rest is required.
     // OSE: 1 rest turn required after every 5 activity turns.
-    derive rest_interval_turns() -> int {
-        5
-    }
+    const REST_INTERVAL_TURNS: int = 5
 
     // Penalty applied to attack and damage rolls when rest is overdue.
     // OSE: -1 to attack and damage when party has not rested.
-    derive rest_overdue_penalty() -> int {
-        -1
-    }
+    const REST_OVERDUE_PENALTY: int = -1
 
 
     // --------------------------------------------------------
@@ -57,9 +53,7 @@ system "OSE Time Economy" {
 
     // Length of a full day in dungeon turns.
     // OSE: 1 day = 24 hours = 144 turns (10 minutes each).
-    derive day_length_turns() -> int {
-        144
-    }
+    const DAY_LENGTH_TURNS: int = 144
 
 
     // --------------------------------------------------------

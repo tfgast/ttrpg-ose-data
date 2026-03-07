@@ -22,9 +22,7 @@ system "OSE Equipment" {
     //  random_starting_weapon + default_starting_armour.
     // ========================================================
 
-    derive standard_adventuring_gear() -> list<string> {
-        ["Backpack", "Torches (6)", "Tinder box (flint &steel)", "Rations (iron, 7 days)", "Waterskin", "Rope (50')"]
-    }
+    const STANDARD_ADVENTURING_GEAR: list<string> = ["Backpack", "Torches (6)", "Tinder box (flint &steel)", "Rations (iron, 7 days)", "Waterskin", "Rope (50')"]
 
 
     // ========================================================
