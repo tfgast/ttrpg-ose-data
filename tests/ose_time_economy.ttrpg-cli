@@ -15,9 +15,9 @@ assert_eq light_source_turns(Lantern), 24
 
 // ── Rest and day-length constants ───────────────────────────────
 
-assert_eq rest_interval_turns(), 5
-assert_eq rest_overdue_penalty(), -1
-assert_eq day_length_turns(), 144
+assert_eq REST_INTERVAL_TURNS, 5
+assert_eq REST_OVERDUE_PENALTY, -1
+assert_eq DAY_LENGTH_TURNS, 144
 
 // ── Coin values (gp x100) ───────────────────────────────────────
 

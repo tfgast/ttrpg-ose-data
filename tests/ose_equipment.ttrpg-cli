@@ -12,14 +12,14 @@ load ose/*.ttrpg
 
 // ── standard_adventuring_gear ───────────────────────────────────
 
-assert_eq standard_adventuring_gear().len(), 6
-assert "Backpack" in standard_adventuring_gear()
-assert "Torches (6)" in standard_adventuring_gear()
-assert "Tinder box (flint &steel)" in standard_adventuring_gear()
-assert "Rations (iron, 7 days)" in standard_adventuring_gear()
-assert "Waterskin" in standard_adventuring_gear()
-assert "Rope (50')" in standard_adventuring_gear()
-assert ("Chainmail" in standard_adventuring_gear()) == false
+assert_eq STANDARD_ADVENTURING_GEAR.len(), 6
+assert "Backpack" in STANDARD_ADVENTURING_GEAR
+assert "Torches (6)" in STANDARD_ADVENTURING_GEAR
+assert "Tinder box (flint &steel)" in STANDARD_ADVENTURING_GEAR
+assert "Rations (iron, 7 days)" in STANDARD_ADVENTURING_GEAR
+assert "Waterskin" in STANDARD_ADVENTURING_GEAR
+assert "Rope (50')" in STANDARD_ADVENTURING_GEAR
+assert ("Chainmail" in STANDARD_ADVENTURING_GEAR) == false
 
 // ── default_starting_armour ─────────────────────────────────────
 

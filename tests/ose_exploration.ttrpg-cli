@@ -11,7 +11,7 @@ load ose/*.ttrpg
 
 // ── Exploration turn phases ─────────────────────────────────────
 
-assert_eq exploration_turn_phases(), [ExplorationPhase.CheckLight, ExplorationPhase.AdvanceTime, ExplorationPhase.CheckRest, ExplorationPhase.ExecuteAction, ExplorationPhase.LightSummary, ExplorationPhase.WanderingMonsterCheck]
+assert_eq EXPLORATION_TURN_PHASES, [ExplorationPhase.CheckLight, ExplorationPhase.AdvanceTime, ExplorationPhase.CheckRest, ExplorationPhase.ExecuteAction, ExplorationPhase.LightSummary, ExplorationPhase.WanderingMonsterCheck]
 
 // ── Exploration action phases ───────────────────────────────────
 
@@ -31,7 +31,7 @@ assert_eq skip_exploration_phase(ExplorationPhase.ExecuteAction, true, true), fa
 
 // ── Threshold derives ───────────────────────────────────────────
 
-assert_eq wandering_monster_interval(), 2
+assert_eq WANDERING_MONSTER_INTERVAL, 2
 assert_eq search_room_threshold(false), 1
 assert_eq search_room_threshold(true), 2
 assert_eq listen_at_door_threshold(false), 1

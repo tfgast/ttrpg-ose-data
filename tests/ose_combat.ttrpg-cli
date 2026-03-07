@@ -51,7 +51,7 @@ assert_err call missile_range_mod(151, 50, 100, 150)
 
 // ── phase_sequence ──────────────────────────────────────────────
 
-assert_eq phase_sequence(), [CombatPhase.Declaration, CombatPhase.Initiative, CombatPhase.Morale, CombatPhase.Movement, CombatPhase.Missile, CombatPhase.Magic, CombatPhase.Melee, CombatPhase.EndOfRound]
+assert_eq PHASE_SEQUENCE, [CombatPhase.Declaration, CombatPhase.Initiative, CombatPhase.Morale, CombatPhase.Movement, CombatPhase.Missile, CombatPhase.Magic, CombatPhase.Melee, CombatPhase.EndOfRound]
 
 // ── phase_actor_order ───────────────────────────────────────────
 
