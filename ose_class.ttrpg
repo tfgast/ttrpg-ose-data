@@ -401,7 +401,7 @@ system "OSE Classes" {
         if modifier_pct == 0 {
             base_xp
         } else {
-            floor(base_xp * (100 + modifier_pct) / 100)
+            (base_xp * (100 + modifier_pct)) div 100
         }
     }
 }
