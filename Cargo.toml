@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Bundled OSE rule files for the ttrpg DSL"
 
+[build-dependencies]
+toml = "0.8"
+
 [workspace]
