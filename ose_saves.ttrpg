@@ -14,6 +14,8 @@
 // as nested match but tables are cleaner for this data.
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Saves" {

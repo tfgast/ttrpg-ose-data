@@ -11,6 +11,8 @@
 // Reference: OSE SRD ability score tables, B/X Expert Set
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Ability" {

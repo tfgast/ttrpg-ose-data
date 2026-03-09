@@ -12,6 +12,8 @@
 //            oag/src/rules/turn.rs (turn undead formula).
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Magic" {

@@ -9,6 +9,9 @@
 // Reference: OSE Advanced Fantasy Players Tome v1.3.
 // ============================================================
 
+import "ose_core.ttrpg"
+import "ose_class.ttrpg"
+
 use "OSE"
 use "OSE Classes"
 

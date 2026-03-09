@@ -11,6 +11,8 @@
 // Phase 1: defines derives only. DSL gates are wired in oag-98z4o.
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Time Economy" {

@@ -8,6 +8,8 @@
 //            oag/src/rules/xp.rs (235 lines)
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Classes" {

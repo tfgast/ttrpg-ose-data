@@ -11,6 +11,8 @@
 //            Advanced Fantasy Players Tome v1.3.
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Spells" {

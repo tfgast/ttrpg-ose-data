@@ -21,6 +21,8 @@
 // Rust: src/engine/exploration/mod.rs
 // ============================================================
 
+import "ose_core.ttrpg"
+
 use "OSE"
 
 system "OSE Exploration" {
