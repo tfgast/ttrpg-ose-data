@@ -1,0 +1,72 @@
+manifest_version = 1
+
+[package]
+name = "ose"
+version = "0.1.0"
+default_target = "full"
+
+[entries.core]
+path = "ose_core.ttrpg"
+
+[entries.ability]
+path = "ose_ability.ttrpg"
+
+[entries.class]
+path = "ose_class.ttrpg"
+
+[entries.combat]
+path = "ose_combat.ttrpg"
+
+[entries.chargen]
+path = "ose_chargen.ttrpg"
+
+[entries.equipment]
+path = "ose_equipment.ttrpg"
+
+[entries.exploration]
+path = "ose_exploration.ttrpg"
+
+[entries.magic]
+path = "ose_magic.ttrpg"
+
+[entries.saves]
+path = "ose_saves.ttrpg"
+
+[entries.spells]
+path = "ose_spells.ttrpg"
+
+[entries.thief]
+path = "ose_thief.ttrpg"
+
+[entries.time_economy]
+path = "ose_time_economy.ttrpg"
+
+[entries.wilderness]
+path = "ose_wilderness.ttrpg"
+
+[bundles.full]
+entries = [
+    "core",
+    "ability",
+    "class",
+    "combat",
+    "chargen",
+    "equipment",
+    "exploration",
+    "magic",
+    "saves",
+    "spells",
+    "thief",
+    "time_economy",
+    "wilderness",
+]
+
+[bundles.chargen]
+entries = [
+    "core",
+    "ability",
+    "class",
+    "chargen",
+    "equipment",
+    "saves",
+]
