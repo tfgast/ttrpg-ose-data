@@ -153,43 +153,20 @@ assert_eq movement_rate(Overloaded), 0
 
 // ── Standard modifier boundary checks ───────────────────────────
 // STR melee, DEX, CON, WIS all share the same breakpoints.
+// Check each boundary for all four modifier functions.
 
-// Boundary: 3 → -3, 4 → -2
+for score in [3, 4, 8, 9, 12, 13, 17, 18] {
+    assert_eq str_melee_mod(score), dex_mod(score)
+    assert_eq str_melee_mod(score), con_hp_mod(score)
+    assert_eq str_melee_mod(score), wis_magic_save_mod(score)
+}
+
+// Verify the actual boundary values via one representative function
 assert_eq str_melee_mod(3), -3
 assert_eq str_melee_mod(4), -2
-assert_eq dex_mod(3), -3
-assert_eq dex_mod(4), -2
-assert_eq con_hp_mod(3), -3
-assert_eq con_hp_mod(4), -2
-assert_eq wis_magic_save_mod(3), -3
-assert_eq wis_magic_save_mod(4), -2
-
-// Boundary: 8 → -1, 9 → 0
 assert_eq str_melee_mod(8), -1
 assert_eq str_melee_mod(9), 0
-assert_eq dex_mod(8), -1
-assert_eq dex_mod(9), 0
-assert_eq con_hp_mod(8), -1
-assert_eq con_hp_mod(9), 0
-assert_eq wis_magic_save_mod(8), -1
-assert_eq wis_magic_save_mod(9), 0
-
-// Boundary: 12 → 0, 13 → +1
 assert_eq str_melee_mod(12), 0
 assert_eq str_melee_mod(13), 1
-assert_eq dex_mod(12), 0
-assert_eq dex_mod(13), 1
-assert_eq con_hp_mod(12), 0
-assert_eq con_hp_mod(13), 1
-assert_eq wis_magic_save_mod(12), 0
-assert_eq wis_magic_save_mod(13), 1
-
-// Boundary: 17 → +2, 18 → +3
 assert_eq str_melee_mod(17), 2
 assert_eq str_melee_mod(18), 3
-assert_eq dex_mod(17), 2
-assert_eq dex_mod(18), 3
-assert_eq con_hp_mod(17), 2
-assert_eq con_hp_mod(18), 3
-assert_eq wis_magic_save_mod(17), 2
-assert_eq wis_magic_save_mod(18), 3
