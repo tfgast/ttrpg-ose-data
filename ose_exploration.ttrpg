@@ -170,9 +170,8 @@ system "OSE Exploration" {
     //  WANDERING MONSTER POLICY
     //
     //  Defines the check interval and roll type.
-    //  Rust is responsible for the `turn % interval == 0` gate
-    //  because the DSL has no modulo operator. When the interval
-    //  fires, Rust calls wandering_monster_roll().
+    //  Rust is responsible for the `turn % interval == 0` gate.
+    //  When the interval fires, Rust calls wandering_monster_roll().
     // ========================================================
 
     // Number of dungeon turns between wandering monster checks.
