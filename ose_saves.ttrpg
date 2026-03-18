@@ -2,7 +2,7 @@
 // OSE Saving Throws — save tables and check mechanic
 //
 // Static lookup: SaveCategory × level → SavingThrows struct.
-// 13 save categories × 3–5 level tiers = 55 table entries.
+// 13 save categories × 3–5 level tiers = 49 table entries.
 //
 // Also provides a saving_throw_check mechanic (d20 vs target).
 //
